@@ -7,67 +7,6 @@ library(ggtreeExtra)
 library(ggnewscale)
 library(stringr)
 
-
-df <- read.csv('sarsrcov_snp.tsv', sep = "\t")
-
-for (i in 1:nrow(df)) {
-  snp <- strsplit(df$mutations[i], split =  "', '")[[1]]
-  snp[1] <- str_replace_all(snp[1],"\\[|'|\\]", "")
-  snp[length(snp)] <- str_replace_all(snp[length(snp)],"\\[|'|\\]", "")
-  df$mutations[i] <- paste(snp, collapse = ',')
-}
-
-
-ddf <- df[,1] %>% as.data.frame()
-
-
-
-for (i in 1:nrow(ddf)) {
-  muts = strsplit(df$mutations[i], ",")[[1]]
-  
-  mut1 = muts[grepl("C8782", muts)]
-  mut2 = muts[grepl("T28144", muts)]
-  if(length(mut1) == 0){
-    ddf$mut1[i] <- 'C'
-  }else{
-    ddf$mut1[i] <- mut1
-  }
-  if(length(mut2) == 0){
-    ddf$mut2[i] <- 'T'
-  }else{
-    ddf$mut2[i] <- mut2
-  }
-  
-  for (x in seqloc1) {
-    mut = muts[grepl(x, muts)]
-    if(length(mut) == 0){
-      ddf[i,x] <- '.'
-    }else{
-      ddf[i,x] <- unlist(strsplit(mut[1], split = ""))[nchar(mut[1])]
-    }
-  }
-  
-  for (x in seqloc2) {
-    mut = muts[grepl(x, muts)]
-    if(length(mut) == 0){
-      ddf[i,x] <- '.'
-    }else{
-      ddf[i,x] <- unlist(strsplit(mut[1], split = ""))[nchar(mut[1])]
-    }
-  }
-}
-
-ddf[6,4:21] <- c(unlist(strsplit('TTTAGCCAG', split = "")),
-                 unlist(strsplit('TGTTTACCT', split = "")))
-id = read.csv('sarsrcov_id.tsv', sep = '\t')
-
-for (i in 1:nrow(ddf)) {
-  ddf$Name[i] = id$Name[id$Header == ddf$strain[i]]
-}
-
-write.csv(ddf, file = 'sarsrcov.csv')
-
-
 ddf = read.csv('sarsrcov.csv')
 id = ddf[,c(1,22)]
 
@@ -158,7 +97,7 @@ p2 = p1 +
   geom_fruit(
     data=df2,
     geom=geom_tile,
-    mapping=aes(y=strain, x=pos, fill=col),
+    mapping=aes(y=Name, x=pos, fill=col),
     position_identityx(hexpand = hexp2, vexpand = NA),
     color = 'white',
     size = 0.03,
@@ -173,7 +112,7 @@ p2 = p1 +
   geom_fruit(
     data=df2,
     geom=geom_text,
-    mapping=aes(y=strain, x=pos, label=base, color = text_color),# color = 'black',
+    mapping=aes(y=Name, x=pos, label=base, color = text_color),# color = 'black',
     position_identityx(hexpand = hexp2, vexpand = NA),
     size = 3,
     offset = 0.08,   # default 0.03
