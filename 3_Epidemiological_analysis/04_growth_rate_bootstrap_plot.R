@@ -47,8 +47,8 @@ p = ggplot(df.plot.all, aes(x = Var1, y = GR.median, colour = Mutations)) +
                arrow = arrow(length = unit(0.2, "cm")), alpha = .7,
                inherit.aes = F) +
   coord_cartesian(xlim = c(as.Date('2020-01-01'), as.Date('2021-11-01'))) +
-  theme(axis.title=element_text(size=16),
-        axis.text=element_text(size=14),
+  theme(axis.title=element_text(size=15),
+        axis.text=element_text(size=13),
         legend.key.size = unit(0.8, 'cm'),
         legend.title = element_text(size=18),
         legend.text = element_text(size=16),

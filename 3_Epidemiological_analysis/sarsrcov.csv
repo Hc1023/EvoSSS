@@ -1,0 +1,58 @@
+strain,mut1,mut2,T8777,T8778,T8779,A8780,G8781,C8782,C8783,A8784,G8785,T28140,G28141,T28142,T28143,T28144,A28145,C28146,C28147,T28148,Name
+"NC_002645.1 Human coronavirus 229E, complete genome",C8782G,T28144-,C,A,.,.,T,G,.,T,A,-,-,-,-,-,-,-,-,-,HCoV 229E
+"NC_006577.2 Human coronavirus HKU1, complete genome",C8782T,T28144-,.,A,.,.,.,T,.,C,A,-,-,-,-,-,-,-,-,-,HCoV HKU1
+"NC_005831.2 Human Coronavirus NL63, complete genome",C8782G,T28144-,C,A,.,.,.,G,.,T,A,-,-,-,-,-,-,-,-,-,HCoV NL63
+"NC_006213.1 Human coronavirus OC43 strain ATCC VR-759, complete genome",C8782T,T28144-,.,A,.,.,.,T,.,T,A,-,-,-,-,-,-,-,-,-,HCoV OC43
+"MT291826.1 Severe acute respiratory syndrome coronavirus 2 isolate SARS-CoV-2/human/CHN/Wuhan_IME-WH01/2019, complete genome",C8782T,T28144C,.,.,.,.,.,T,.,.,.,.,.,.,.,C,.,.,.,.,IME-WH01 (Lineage A)
+"NC_045512.2 Severe acute respiratory syndrome coronavirus 2 isolate Wuhan-Hu-1, complete genome",C,T,T,T,T,A,G,C,C,A,G,T,G,T,T,T,A,C,C,T,Wuhan-Hu-1 (Lineage B)
+"NC_019843.3 Middle East respiratory syndrome-related coronavirus isolate HCoV-EMC/2012, complete genome",C8782T,T,.,A,.,C,A,T,G,.,.,.,.,A,.,.,G,.,T,-,MERS-CoV
+"NC_004718.3 |SARS coronavirus Tor2, complete genome",C,T28144-,.,.,.,.,.,.,.,.,.,.,.,.,-,-,-,-,-,-,SARS-CoV
+Alpha 1,C,T,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,Alpha 1
+Alpha 2,C,T,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,Alpha 2
+Alpha 3,C,T,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,Alpha 3
+Beta 1,C,T,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,Beta 1
+Beta 2,C,T,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,Beta 2
+Beta 3,C,T,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,Beta 3
+Delta 1,C,T,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,Delta 1
+Delta 2,C,T,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,Delta 2
+Delta 3,C,T,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,Delta 3
+Gamma 1,C,T,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,Gamma 1
+Gamma 2,C,T,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,Gamma 2
+Gamma 3,C,T,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,Gamma 3
+Omicron 1,C,T,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,Omicron 1
+Omicron 2,C,T,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,Omicron 2
+Omicron 3,C,T,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,Omicron 3
+"NC_014470.1 |Bat coronavirus BM48-31/BGR/2008, complete genome",C8782T,T28144-,.,.,C,.,.,T,.,.,.,-,-,-,-,-,-,-,-,-,Bat BM48-31
+hCoV-19/bat/Yunnan/PrC31/2018,C8782T,T28144C,.,.,.,.,.,T,.,.,.,.,.,.,.,C,.,.,.,.,Bat PrC31
+hCoV-19/bat/Yunnan/RsYN06/2020,C8782T,T28144C,.,.,.,.,.,T,.,.,.,.,.,.,.,C,.,.,.,.,Bat RsYN06
+hCoV-19/bat/Yunnan/RsYN03/2019,C,T28144A,.,.,.,.,.,.,.,.,.,.,.,.,G,A,.,.,.,A,Bat RsYN03
+hCoV-19/bat/Yunnan/RsYN04/2020,C8782T,T28144C,.,.,.,.,.,T,.,.,A,.,.,C,.,C,G,.,.,.,Bat RsYN04
+hCoV-19/bat/Yunnan/RmYN05/2020,C8782T,T28144C,.,.,.,.,.,T,.,.,A,.,.,C,.,C,G,.,.,.,Bat RmYN05
+hCoV-19/bat/Yunnan/RpYN06/2020,C8782T,T28144C,.,.,.,.,.,T,.,.,.,.,.,.,.,C,.,.,.,.,Bat RpYN06
+hCoV-19/bat/Yunnan/RmYN07/2020,C,T28144A,.,.,.,.,.,.,.,.,.,.,.,.,G,A,.,.,.,A,Bat RmYN07
+hCoV-19/bat/Yunnan/RmYN08/2020,C8782T,T28144C,.,.,.,.,.,T,.,.,A,.,.,C,.,C,G,.,.,.,Bat RmYN08
+hCoV-19/bat/Yunnan/RsYN09/2020,C8782T,T28144A,.,.,.,.,.,T,.,.,.,.,.,.,G,A,.,.,.,A,Bat RsYN09
+hCoV-19/bat/Yunnan/RaTG13/2013,C8782T,T28144C,.,.,.,.,.,T,.,.,.,.,.,.,.,C,.,.,.,.,Bat RaTG13
+hCoV-19/bat/Yunnan/RmYN01/2019,C,T28144A,.,.,.,.,.,.,.,.,.,.,.,.,G,A,.,.,.,A,Bat RmYN01
+hCoV-19/bat/Yunnan/RmYN02/2019,C8782T,T28144C,.,.,.,.,.,T,.,.,.,.,.,.,.,C,G,.,.,.,Bat RmYN02
+hCoV-19/bat/Laos/BANAL-52/2020,C8782T,T28144C,.,.,.,.,.,T,.,.,.,.,.,.,.,C,.,.,.,.,Bat BANAL-52
+hCoV-19/bat/Laos/BANAL-103/2020,C8782T,T28144C,.,.,.,.,.,T,.,.,.,.,.,.,.,C,.,.,.,.,Bat BANAL-103
+hCoV-19/bat/Laos/BANAL-116/2020,C8782T,T28144C,.,.,.,.,.,T,.,.,.,.,.,.,.,C,G,.,.,.,Bat BANAL-116
+hCoV-19/bat/Laos/BANAL-236/2020,C8782T,T28144C,.,.,.,.,.,T,.,.,.,.,.,.,.,C,.,.,.,.,Bat BANAL-236
+hCoV-19/bat/Laos/BANAL-247/2020,C8782T,T28144C,.,.,.,.,.,T,.,.,.,.,.,.,.,C,G,.,.,.,Bat BANAL-247
+hCoV-19/bat/Cambodia/RShSTT182/2010,C8782T,T28144C,.,.,.,.,.,T,.,.,.,.,.,C,.,C,.,.,.,C,Bat RShSTT182
+hCoV-19/bat/Cambodia/RShSTT200/2010,C8782T,T28144C,.,.,.,.,.,T,.,.,.,.,.,C,.,C,.,.,.,C,Bat RShSTT200
+hCoV-19/pangolin/Guangxi/P4L/2017,C8782T,T28144C,.,.,.,.,.,T,.,.,A,.,.,.,.,C,.,.,.,G,Pangolin P4L
+hCoV-19/pangolin/Guangxi/P1E/2017,C8782T,T28144C,.,.,.,.,.,T,.,.,A,.,.,.,.,C,.,.,.,G,Pangolin P1E
+hCoV-19/pangolin/Guangxi/P5L/2017,C8782T,T28144C,.,.,.,.,.,T,.,.,A,.,.,.,.,C,.,.,.,G,Pangolin P5L
+hCoV-19/pangolin/Guangxi/P5E/2017,C8782T,T28144C,.,.,.,.,.,T,.,.,A,.,.,.,.,C,.,.,.,G,Pangolin P5E
+hCoV-19/pangolin/Guangxi/P2V/2017,C8782T,T28144C,.,.,.,.,.,T,.,.,A,.,.,.,.,C,.,.,.,G,Pangolin P2V
+hCoV-19/pangolin/Guangxi/P3B/2017,C8782T,T28144N,.,.,.,.,.,T,.,.,A,N,N,N,N,N,N,N,.,G,Pangolin P3B
+hCoV-19/pangolin/Guangdong/P2S/2019,C8782T,T28144C,.,.,.,.,.,T,.,.,.,.,.,.,.,C,.,.,.,.,Pangolin P2S
+hCoV-19/pangolin/Guangdong/1/2019,C8782T,T28144C,.,.,.,.,.,T,.,.,.,.,.,.,.,C,.,.,.,.,Pangolin Guangdong-1
+hCoV-19/pangolin/China/MP789/2019,C8782T,T28144C,.,.,.,.,.,T,.,.,.,.,.,.,.,C,.,.,.,.,Pangolin MP789
+hCoV-19/pangolin/Guangdong/A22-2/2019,C8782T,T28144C,.,.,.,.,.,T,.,.,.,.,.,.,.,C,.,.,.,.,Pangolin A22-2
+hCoV-19/pangolin/Guangdong/FM45-9/2019,C8782T,T28144C,.,.,.,.,.,T,.,.,.,.,.,.,.,C,.,.,.,.,Pangolin FM45-9
+hCoV-19/pangolin/Guangdong/SM44-9/2019,C8782T,T28144C,.,.,.,.,.,T,.,.,.,.,.,.,.,C,.,.,.,.,Pangolin SM44-9
+hCoV-19/pangolin/Guangdong/SM79-9/2019,C8782T,T28144C,.,.,.,.,.,T,.,.,.,.,.,.,.,C,.,.,.,.,Pangolin SM79-9
+hCoV-19/pangolin/Yunnan/MP20/2017,C8782N,T28144N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,Pangolin MP20
