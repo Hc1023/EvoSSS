@@ -78,14 +78,14 @@ p1 <- ggtree(Ttree.drop, mrsd = '2020-03-01', as.Date = T,
   new_scale_fill() +
   geom_tippoint(aes(fill = Names_ID, 
                     subset = !(label %in% nextclade$seqName[1:149])), 
-                size = 2, shape=21) +
+                size = 3, shape=21) +
   geom_tippoint(aes(fill = Names_ID, 
                     subset = label %in% nextclade$seqName[1:149]), 
-                size = 3, shape=21, show.legend = F) +
+                size = 4, shape=21, show.legend = F) +
   scale_color_manual(name="Samples", 
                      values=alpha(values2, alpha = 1)) + 
   scale_fill_manual(name="Samples", 
-                    values=alpha(values2, alpha = 0.8)) + 
+                    values=alpha(values2, alpha = 1)) + 
   scale_x_date(date_labels = "%y %b", breaks = "1 month") +
   coord_cartesian(ylim = c(-10, 2100)) +
   theme(legend.key.size = unit(0.4, 'cm'),
@@ -94,9 +94,10 @@ p1 <- ggtree(Ttree.drop, mrsd = '2020-03-01', as.Date = T,
          fill = guide_legend(order = 1))
 p1
 
+
+
 pdf(file = 'Output/tree_early.pdf', width = 4.5, height = 3)
 print(p1)
-print(p2)
 dev.off()
 
 
