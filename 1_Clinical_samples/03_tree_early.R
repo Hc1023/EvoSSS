@@ -5,6 +5,7 @@ library(ggplot2)
 library(ape)
 library(scales)
 library(ggnewscale)
+library(tidyverse)
 
 Ttree <- read.tree('tree_early.nwk')
 # clock rate = 0.0008
@@ -65,8 +66,9 @@ values2 = c(hue_pal()(6)[1:3], "#CB1414", hue_pal()(6)[5:6], "#F0F014")
 options(ignore.negative.edge=TRUE)
 
 sizetext = 4
-p <- ggtree(Ttree.drop, mrsd = '2020-03-01', as.Date = T, 
-            aes(color = group), size = 0.3) %<+% 
+
+p1 <- ggtree(Ttree.drop, mrsd = '2020-03-01', as.Date = T, 
+             aes(color = group), size = 0.3) %<+% 
   sample_dat + theme_tree2() +
   scale_color_manual(name="Clades",
                      labels=c("Lineage A", "Lineage B",
@@ -74,23 +76,27 @@ p <- ggtree(Ttree.drop, mrsd = '2020-03-01', as.Date = T,
                      values = values) +
   new_scale_color() + 
   new_scale_fill() +
-  geom_tippoint(aes(color = Names_ID), #subset = !(label %in% nextclade$seqName[1:149])), 
-                size = 2, shape=19) +
-  geom_tippoint(aes(color = Names_ID, subset = label %in% nextclade$seqName[1:149]), 
-                size = 3, shape=19, show.legend = F) +
+  geom_tippoint(aes(fill = Names_ID, 
+                    subset = !(label %in% nextclade$seqName[1:149])), 
+                size = 2, shape=21) +
+  geom_tippoint(aes(fill = Names_ID, 
+                    subset = label %in% nextclade$seqName[1:149]), 
+                size = 3, shape=21, show.legend = F) +
   scale_color_manual(name="Samples", 
-                    values=alpha(values2, alpha = 0.9)) + 
+                     values=alpha(values2, alpha = 1)) + 
+  scale_fill_manual(name="Samples", 
+                    values=alpha(values2, alpha = 0.8)) + 
   scale_x_date(date_labels = "%y %b", breaks = "1 month") +
   coord_cartesian(ylim = c(-10, 2100)) +
   theme(legend.key.size = unit(0.4, 'cm'),
         legend.background = element_blank()) +
   guides(shape = guide_legend(order = 2),
          fill = guide_legend(order = 1))
-p
+p1
 
-
-pdf(file = 'Output/tree_early.pdf', width = 4, height = 3)
-print(p)
+pdf(file = 'Output/tree_early.pdf', width = 4.5, height = 3)
+print(p1)
+print(p2)
 dev.off()
 
 
