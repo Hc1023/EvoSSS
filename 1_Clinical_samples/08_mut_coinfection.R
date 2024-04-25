@@ -25,49 +25,51 @@ mygather = function(df1, y=100){
 }
 
 mylist = mygather(df1)
-a = mylist[[1]]
-tmp1 = mylist[[2]]
-tmp2 = mylist[[3]]
+dfa = mylist[[1]]
+dftmp1 = mylist[[2]]
+dftmp2 = mylist[[3]]
 
-p = ggplot(data = a, mapping = aes(x = Sample, y = Counts, fill = Mutations)) +
-  geom_col() +
-  theme_classic()+
-  scale_fill_manual(values = c(alpha(c('navy', 'firebrick3', 'black'), 0.9)),
-                    labels = c('8782C','8782T','Others')) +
+p = ggplot(data = dfa, 
+           mapping = aes(x = Sample, y = Counts, 
+                         fill = Mutations)) +
+  geom_col() + theme_classic() +
+  scale_fill_manual(values = c(alpha(c('#45cbba', 'firebrick3', 'black'), 0.8)),
+                    labels = c('C8782','C8782T','Others'),
+                    name = '') +
   labs(x = 'Samples', y = 'Number of reads') +
   theme(axis.text.x=element_blank(),
         axis.ticks.x=element_blank(),
         legend.position = 'top') +
   scale_y_continuous(expand = c(0.01, 0), 
-                     limits = c(0, max(a$total_reads)+300)) +
-  geom_text(data = tmp1, aes(x = Sample, y = total_reads),
+                     limits = c(0, max(dfa$total_reads)+300)) +
+  geom_text(data = dftmp1, aes(x = Sample, y = total_reads),
             label = '*', size = 2.5, color = 'red', inherit.aes = F) +
-  geom_text(data = tmp2, aes(x = Sample, y = total_reads),
+  geom_text(data = dftmp2, aes(x = Sample, y = total_reads),
             label = '.', inherit.aes = F,
             size = 3, vjust = -0.2)
 p
-pdf(file = 'Output/num_reads_8782.pdf', width = 4, height = 1.8)
+pdf(file = 'Output/num_reads_8782.pdf', width = 3.6, height = 1.8)
 print(p)
 dev.off()
 
 mylist = mygather(df1[df1$total_reads < 200,], 20)
 
-a = mylist[[1]]
-tmp1 = mylist[[2]]
-p = ggplot(data = a, 
+dfa_sub = mylist[[1]]
+dftmp1_sub = mylist[[2]]
+p = ggplot(data = dfa_sub, 
            mapping = aes(x = Sample, y = Counts, 
                          fill = Mutations)) +
   geom_col() +
   theme_classic()+
-  scale_fill_manual(values = c(alpha(c('navy', 'firebrick3', 'black'), 0.9)),
-                    labels = c('8782C','8782T','Others'),
+  scale_fill_manual(values = c(alpha(c('#45cbba', 'firebrick3', 'black'), 0.8)),
+                    labels = c('C8782','C8782T','Others'),
                     guide  = 'none') +
   labs(x = '', y = '') +
   theme(axis.text.x=element_blank(),
         axis.ticks.x=element_blank()) +
   scale_y_continuous(expand = c(0.01, 0), 
-                     limits = c(0, max(a$total_reads)+5)) +
-  geom_text(data = tmp1, aes(x = Sample, y = total_reads),
+                     limits = c(0, max(dfa_sub$total_reads)+5)) +
+  geom_text(data = dftmp1_sub, aes(x = Sample, y = total_reads),
             label = '.', inherit.aes = F, size = 3, vjust = -0.2)
 p
 pdf(file = 'Output/num_reads_8782_sub.pdf', width = 2, height = 1)
@@ -76,45 +78,46 @@ dev.off()
 
 
 mylist = mygather(df2)
-a = mylist[[1]]
-tmp1 = mylist[[2]]
-tmp2 = mylist[[3]]
-p = ggplot(data = a, mapping = aes(x = Sample, y = Counts, fill = Mutations)) +
+dfb = mylist[[1]]
+dfbtmp1 = mylist[[2]]
+dfbtmp2 = mylist[[3]]
+p = ggplot(data = dfb, mapping = aes(x = Sample, y = Counts, fill = Mutations)) +
   geom_col() +
   theme_classic()+
-  scale_fill_manual(values = alpha(c('darkgreen', 'orange', 'black'), 0.9),
-                    labels = c('28144T','28144C','Others')) +
+  scale_fill_manual(values = alpha(c('#206fc8', 'orange', 'black'), 0.8),
+                    labels = c('T28144','T28144C','Others'),
+                    name = '') +
   labs(x = 'Samples', y = 'Number of reads') +
   theme(axis.text.x=element_blank(),
         axis.ticks.x=element_blank(),
         legend.position = 'top') +
   scale_y_continuous(expand = c(0.01, 0), 
-                     limits = c(0, max(a$total_reads)+300)) +
-  geom_text(data = tmp1, aes(x = Sample, y = total_reads),
-            label = '*', size = 2.5, color = 'firebrick', inherit.aes = F) +
-  geom_text(data = tmp2, aes(x = Sample, y = total_reads),
+                     limits = c(0, max(dfb$total_reads)+300)) +
+  geom_text(data = dfbtmp1, aes(x = Sample, y = total_reads),
+            label = '*', size = 2.5, color = 'red', inherit.aes = F) +
+  geom_text(data = dfbtmp2, aes(x = Sample, y = total_reads),
             label = '.', inherit.aes = F,size = 3, vjust = -0.2)
 p
-pdf(file = 'Output/num_reads_28144.pdf', width = 4, height = 1.8)
+pdf(file = 'Output/num_reads_28144.pdf', width = 3.6, height = 1.8)
 print(p)
 dev.off()
 
 mylist = mygather(df2[df2$total_reads < 200,], 20)
 
-a = mylist[[1]]
-tmp1 = mylist[[2]]
-p = ggplot(data = a, mapping = aes(x = Sample, y = Counts, fill = Mutations)) +
+dfb_sub = mylist[[1]]
+dfbtmp1_sub = mylist[[2]]
+p = ggplot(data = dfb_sub, mapping = aes(x = Sample, y = Counts, fill = Mutations)) +
   geom_col() +
   theme_classic()+
-  scale_fill_manual(values = alpha(c('darkgreen', 'orange', 'black'), 0.9),
-                    labels = c('28144T','28144C','Others'),
+  scale_fill_manual(values = alpha(c('#206fc8', 'orange', 'black'), 0.8),
+                    labels = c('T28144','T28144C','Others'),
                     guide = 'none') +
   labs(x = '', y = '') +
   theme(axis.text.x=element_blank(),
         axis.ticks.x=element_blank()) +
   scale_y_continuous(expand = c(0.01, 0), 
-                     limits = c(0, max(a$total_reads)+8)) +
-  geom_text(data = tmp1, aes(x = Sample, y = total_reads),
+                     limits = c(0, max(dfb_sub$total_reads)+8)) +
+  geom_text(data = dfbtmp1_sub, aes(x = Sample, y = total_reads),
             label = '.', inherit.aes = F, size = 3, vjust = -0.2)
 p
 pdf(file = 'Output/num_reads_28144_sub.pdf', width = 1.5, height = 1.2)
