@@ -4,6 +4,7 @@ library(ggplot2)
 library(scales)
 
 load("GRrate.RData")
+
 values = c(hue_pal()(3)[1], hue_pal()(3)[3], hue_pal()(3)[2], hue_pal()(4)[4])
 
 df.polygon.all = data.frame()
