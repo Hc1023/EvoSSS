@@ -120,10 +120,31 @@ p = ggplot(plot_data, aes(x = date_vector, y = Fitted, group = Mutations)) +
                inherit.aes = F) +
   theme(legend.background = element_blank(),
         legend.position = c(0.8,0.8),
-        legend.title = element_blank())
+        legend.title = element_blank()) +
+  geom_hline(yintercept = 0, linetype = 'dashed', color = alpha('black', 0.7))
 
 pdf(paste0("Output/gr_rate.pdf"), width = 2.8, height = 2.3)
 print(p)
 dev.off()
 
 
+#### Calculate R0
+dfr0 = data.frame()
+for (i in c('Lineage A', 'Lineage B')) {
+  alpha = 2.29
+  beta = 0.36
+  df = plot_data[plot_data$Mutations == i,]
+  id = which.max(df$Fitted[1:200])
+  x = df[id,c(3,4,5)]
+  R0_vec = sapply(x, function(r){
+    (1+r/beta)^alpha
+  })
+  dfr0 = rbind(dfr0, rbind(c(x, 'gr', i),c(R0_vec, 'R0', i)))
+}
+
+dfr0
+#            Fitted          LowerCI          UpperCI V4        V5
+# 1        0.1911674        0.1814377        0.1981715 gr Lineage A
+# 2 2.65220140309351 2.54620457283255 2.73001610989561 R0 Lineage A
+# 3        0.4145837        0.4076278        0.4208165 gr Lineage B
+# 4 5.78141111942639 5.66320661987866 5.88849719447037 R0 Lineage B
