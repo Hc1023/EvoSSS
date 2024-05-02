@@ -53,8 +53,8 @@ plot_data = rbind(plot_data1, plot_data2)
 
 values = c(hue_pal()(3)[1], hue_pal()(3)[3])
 
-anno = data.frame(x0 = as.Date(c('2020-8-10','2020-9-10','2020-10-29','2020-10-30','2021-9-1')),
-                  y0 = c(128,8192,256,16384,2048),
+anno = data.frame(x0 = as.Date(c('2020-8-10','2020-8-25','2020-10-29','2020-10-30','2021-8-10')),
+                  y0 = c(128,8692,256,19384,2048),
                   text = c('Beta', 'Alpha', 'Gamma', 'Delta', 'Omicron'))
 anno_arr = data.frame(x = as.Date(c('2020-8-10','2020-9-20','2020-10-29','2020-10-30','2021-9-1')),
                       y = c(165,6000,320,13000,2550),
@@ -70,19 +70,19 @@ p = ggplot(plot_data, aes(x = date_vector, group = Mutations)) +
                                 expression('10'^'8'),expression('10'^'11'),
                                 expression('10'^'14'))) +
   annotation_logticks(linewidth = 0.1, alpha = 0.5) +
-  geom_point(aes(y = Observed, color = Mutations), size = 1, alpha = 0.5, shape = 16) + 
-  geom_line(aes(y = Observed, color = Mutations), size = 0.2, alpha = 0.5) +  # Observed data
+  geom_point(aes(y = Observed, color = Mutations), size = 0.4, alpha = 0.5, shape = 16) + 
+  geom_line(aes(y = Observed, color = Mutations), linewidth = 0.2, alpha = 0.5) +  # Observed data
   geom_line(aes(y = Fitted, color = Mutations), size = 0.8, alpha = 0.7) +  # Fitted line
-  scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="4 months"),
+  scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="6 months"),
                minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-11-01'), by ='1 month'),
                date_labels = "%y-%b") +
   xlab('Date (2019-2021)') +
   ylab('') + theme_bw() +
   scale_color_manual(name="",
-                     labels=c("Lineage A", "Lineage B", '8782 C>T', "28144 T>C"),
+                     labels=c("A", "B"),
                      values = alpha(values, 0.6)) +
   scale_fill_manual(name="",
-                    labels=c("Lineage A", "Lineage B", '8782 C>T', "28144 T>C"),
+                    labels=c("A", "B"),
                     values = alpha(values, 0.1)) +
   coord_cartesian(ylim = c(0, max(plot_data$Observed)), 
                   xlim = c(min(plot_data$date_vector), as.Date('2021-10-05'))) +
@@ -92,14 +92,11 @@ p = ggplot(plot_data, aes(x = date_vector, group = Mutations)) +
                arrow = arrow(length = unit(0.2, "cm")), alpha = .7,
                inherit.aes = F) +
   theme(legend.background = element_blank(),
-        # legend.box.background = element_rect(fill = alpha("white", 0.5), 
-        #                                      color = alpha('black', 0.5), 
-        #                                      linewidth = 0.2),
-        legend.position = c(0.16,0.86),
+        legend.position = c(0.12,0.85),
         legend.title = element_blank())
 
 
 p
-pdf(paste0("Output/gr.pdf"), width = 4.5, height = 3)
+pdf(paste0("Output/gr.pdf"), width = 3, height = 2.3)
 print(p)
 dev.off()

@@ -49,6 +49,7 @@ model {
 }
 ")
   # Run the model
+  # The default and preferred algorithm is "NUTS", which is the No-U-Turn sampler variant of Hamiltonian Monte Carlo (Hoffman and Gelman 2011, Betancourt 2017). 
   fit <- stan(model_code = stan_code, data = stan_data, 
               iter = 10000, chains = 3, verbose = T,
               control = list(max_treedepth = 20))
