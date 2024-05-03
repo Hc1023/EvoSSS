@@ -65,58 +65,38 @@ fit2 = bspline(df2)
 
 save(fit1, fit2, file = 'grBspline.Rdata')
 
+load('grBspline.Rdata')
+
+evaluate_performance = function(fit){
+  stan_est = extract(fit) 
+  stan_est = as.matrix(fit)
+  nchain = 3
+  npar = 10
+  performance = data.frame()
+  for (i in 1:npar) {
+    beta_est = stan_est[,i]
+    beta_est_mat = matrix(beta_est, ncol=nchain)
+    rhat = Rhat(beta_est_mat)
+    essb = ess_bulk(beta_est_mat)
+    esst = ess_tail(beta_est_mat)
+    performance = rbind(performance, c(rhat, essb, esst))
+  }
+  colnames(performance) = c('rhat', 'essb', 'esst')
+  return(performance)
+}
+
+performance1 = evaluate_performance(fit1)
+performance2 = evaluate_performance(fit2)
 
 traceplot(fit, pars = c("beta[2]"))
 
-getplot = function(df, fit){
-  ndays = nrow(df)
-  time = 1:ndays
-  cases =  df$Freq
-  # Fit a GAM with P-splines
-  gam_model <- gam(cases ~ s(time, bs = "ps"), 
-                   family = poisson(link = "log")
-                   )
-  # Extracting model matrix
-  X <- model.matrix(gam_model)
-  posterior_samples <- extract(fit)
-  simu_Onset <- matrix(NA, nrow = 15000, ncol = ndays)
-  for (i in 1:15000) {
-    pars = posterior_samples$beta[i,]
-    simu_Onset[i, ] <- exp(X %*% pars)  
-  }
-  ci_lower <- apply(simu_Onset, 2, quantile, probs = 0.025, na.rm = T)
-  ci_upper <- apply(simu_Onset, 2, quantile, probs = 0.975, na.rm = T)
-  start_date <- as.Date("2019-12-24") 
-  date_vector <- seq.Date(start_date, by = "day", length.out = ndays)
-  
-  plot_data <- data.frame(
-    Day = 1:ndays,
-    date_vector = date_vector,
-    Observed = cases,
-    Fitted = colMeans(simu_Onset),
-    LowerCI = ci_lower,
-    UpperCI = ci_upper
-  )
-  return(plot_data)
-}
 
-
-
-posterior_samples <- extract(fit2)
-pars<- apply(posterior_samples$beta, 2, mean)
-fitted_values <- exp(X %*% pars)  
-original_data <- data.frame(time = 1:ndays, cases = cases)
-original_data$fitted_values <- fitted_values
-p <- ggplot(original_data, aes(x = time)) +
-  geom_line(aes(y = cases), colour = "blue", size = 1, alpha = 0.7, linetype = "dotted") +
-  geom_line(aes(y = fitted_values), colour = "red", size = 1) +
-  labs(title = "Comparison of Observed and Fitted Cases",
-       x = "Time",
-       y = "Number of Cases",
-       caption = "Blue dotted line: Observed Data\nRed line: Fitted Values") +
-  theme_minimal()
-
-# Display the plot
+p = stan_diag(fit)
+pdf(paste0("Output/bspline_diag.pdf"), width = 4, height = 5)
 print(p)
+dev.off()
 
-
+p = traceplot(fit)
+pdf(paste0("Output/bspline_performance.pdf"), width = 10, height = 4)
+print(p)
+dev.off()
