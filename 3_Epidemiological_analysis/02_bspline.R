@@ -92,7 +92,7 @@ traceplot(fit, pars = c("beta[2]"))
 
 
 p = stan_diag(fit)
-pdf(paste0("Output/bspline_diag.pdf"), width = 4, height = 5)
+pdf(paste0("Output/bspline_diag.pdf"), width = 3.5, height = 1.6)
 print(p)
 dev.off()
 
