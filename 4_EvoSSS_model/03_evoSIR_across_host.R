@@ -9,26 +9,13 @@ observed_cases = realData$CaseNum
 # Define data
 N = sum(observed_cases)
 I0 = sum(realData_all$CaseNum[22:24])
-I10 = I0*0.3
-I20 = I0*0.7
+I10 = I0*0.5
+I20 = I0*0.5
 S0 <- N - I0
 ndays <- length(observed_cases)
 
 load(file = 'SIR.rdata')
 posterior_samples <- extract(fit)
-G = 5.2 # Hao et al. 2020
-
-load("../3_Epidemiological_analysis/GRrate.RData")
-df1 =df.plot.all[df.plot.all$Var1 < '2020-03-01' & 
-                   df.plot.all$Var1 >= '2020-01-01',]
-
-gr1 = df1[df1$Mutations == 'Lineage A','GR.median']
-gr2 = df1[df1$Mutations == 'Lineage B','GR.median']
-R1 = exp(gr1*G)
-R2 = exp(gr2*G)
-
-c1 = median(R1/(R1+R2))
-c2 = median(R2/(R1+R2))
 
 update_fun = function(pars, states_old){
   
@@ -98,20 +85,18 @@ simu <- function(pars, states_old, ndays, f = update_fun) {
 
 
 
-simu_Onset1 <- matrix(NA, nrow = 15000, ncol = ndays)
-simu_Onset2 <- matrix(NA, nrow = 15000, ncol = ndays)
+simu_Onset1 <- matrix(NA, nrow = 20000, ncol = ndays)
+simu_Onset2 <- matrix(NA, nrow = 20000, ncol = ndays)
 # Simulate the epidemic for each set of sampled parameters
-for (i in 1:15000) {
-  # beta = beta1*I1/I + beta2*I2/I = 0.3*beta1 + 0.7*beta2
-  # beta1/beta2 = median(R1/R2)
-  # beta = 0.3*beta2*median(R1/R2)+0.7*beta2
-  beta = posterior_samples$beta[i]
-  beta2 = beta/(0.3*median(R1/R2) + 0.7)
-  beta1 = beta2*median(R1/R2)
-  pars = c(beta1 = beta1, beta2 = beta2, gamma = posterior_samples$gamma[i])
+for (i in 1:20000) {
+
+  beta1 = posterior_samples$beta1[i]
+  beta2 = posterior_samples$beta2[i]
+  gamma = posterior_samples$gamma[i]
+  pars = c(beta1 = beta1, beta2 = beta2, gamma = gamma)
   states_old = c(S0,I10,I20)
   result <- simu(pars, states_old, ndays,
-                 f = update_fun_stochastic)
+                 f = update_fun)
   simu_Onset1[i, ] <- result[,'Onset1']
   simu_Onset2[i, ] <- result[,'Onset2']
 }
@@ -143,12 +128,14 @@ df1$V = 'V1'
 df2$V = 'V2'
 df$V = 'All'
 plot_data = rbind(df1, df2, df)
-plot_data = df
+
+sum(df1$Fitted, na.rm = T)
+sum(df2$Fitted, na.rm = T)
 # Plot using ggplot2
-ggplot(plot_data, aes(x = date_vector)) +
-  geom_ribbon(aes(ymin = LowerCI, ymax = UpperCI), fill = '#ead5bf', alpha = 0.6) +  # Confidence interval
-  geom_point(aes(y = Observed), color = '#241508', size = 1, alpha = 0.5, shape = 16) +  # Observed data
-  geom_line(aes(y = Fitted), color = '#80553c', size = 0.8, alpha = 0.7) +  # Fitted line
+ggplot(plot_data, aes(x = date_vector, group = V)) +
+  geom_ribbon(aes(ymin = LowerCI, ymax = UpperCI, fill = V), alpha = 0.6) +  # Confidence interval
+  geom_point(aes(y = Observed, color = V), size = 1, alpha = 0.5, shape = 16) +  # Observed data
+  geom_line(aes(y = Fitted, color = V), size = 0.8, alpha = 0.7) +  # Fitted line
   labs(x = "Date (2020)", y = "Cases") +
   scale_x_date(date_labels = "%b-%d", date_breaks = "1 month") +  
   theme_bw()
