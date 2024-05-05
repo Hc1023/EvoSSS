@@ -1,7 +1,7 @@
 rm(list = ls())
 library(rstan)
 library(ggplot2)
-
+library(scales)
 realData_all <- read.csv("Covid19CasesWH.csv", row.names = 1)
 realData <- realData_all[-c(1:24), ] 
 observed_cases = realData$CaseNum
@@ -15,6 +15,7 @@ S0 <- N - I0
 ndays <- length(observed_cases)
 
 load(file = 'SIR.rdata')
+fit = fitlist[[5]]
 posterior_samples <- extract(fit)
 
 update_fun = function(pars, states_old){
@@ -84,7 +85,6 @@ simu <- function(pars, states_old, ndays, f = update_fun) {
 }
 
 
-
 simu_Onset1 <- matrix(NA, nrow = 20000, ncol = ndays)
 simu_Onset2 <- matrix(NA, nrow = 20000, ncol = ndays)
 # Simulate the epidemic for each set of sampled parameters
@@ -96,23 +96,24 @@ for (i in 1:20000) {
   pars = c(beta1 = beta1, beta2 = beta2, gamma = gamma)
   states_old = c(S0,I10,I20)
   result <- simu(pars, states_old, ndays,
-                 f = update_fun)
+                 f = update_fun_stochastic)
   simu_Onset1[i, ] <- result[,'Onset1']
   simu_Onset2[i, ] <- result[,'Onset2']
 }
+
+start_date <- as.Date("2020-01-01") 
+date_vector <- seq.Date(start_date, by = "day", length.out = ndays)
 
 generate_plotdata = function(df){
   simu_Onset = df
   # Calculate the 2.5th and 97.5th percentiles for the confidence interval
   ci_lower <- apply(simu_Onset, 2, quantile, probs = 0.025, na.rm = T)
   ci_upper <- apply(simu_Onset, 2, quantile, probs = 0.975, na.rm = T)
-  start_date <- as.Date("2020-01-01") 
-  date_vector <- seq.Date(start_date, by = "day", length.out = ndays)
   
   plot_data <- data.frame(
     Day = 1:ndays,
     date_vector = date_vector,
-    Observed = observed_cases,
+    # Observed = observed_cases,
     Fitted = colMeans(simu_Onset),
     LowerCI = ci_lower,
     UpperCI = ci_upper
@@ -120,10 +121,16 @@ generate_plotdata = function(df){
   
   return(plot_data)
 }
+
+data_observed <- data.frame(
+  Day = 1:ndays,
+  date_vector = date_vector,
+  Observed = observed_cases
+)
 simu_Onset = simu_Onset1 + simu_Onset2
 df1 = generate_plotdata(df = simu_Onset1)
 df2 = generate_plotdata(df = simu_Onset2)
-df = generate_plotdata(simu_Onset)
+df = generate_plotdata(df = simu_Onset)
 df1$V = 'V1'
 df2$V = 'V2'
 df$V = 'All'
@@ -132,14 +139,34 @@ plot_data = rbind(df1, df2, df)
 sum(df1$Fitted, na.rm = T)
 sum(df2$Fitted, na.rm = T)
 # Plot using ggplot2
-ggplot(plot_data, aes(x = date_vector, group = V)) +
-  geom_ribbon(aes(ymin = LowerCI, ymax = UpperCI, fill = V), alpha = 0.6) +  # Confidence interval
-  geom_point(aes(y = Observed, color = V), size = 1, alpha = 0.5, shape = 16) +  # Observed data
-  geom_line(aes(y = Fitted, color = V), size = 0.8, alpha = 0.7) +  # Fitted line
+
+values = c("#aa85a6", hue_pal()(3)[1], hue_pal()(3)[3])
+show_col(values)
+p = ggplot() +
+  geom_ribbon(data = plot_data, 
+              aes(x = date_vector, group = V, 
+                  ymin = LowerCI, ymax = UpperCI, fill = V)) +  # Confidence interval
+  geom_point(data = data_observed, 
+             aes(x = date_vector, y = Observed), 
+             size = 0.5, alpha = 0.5) +  # Observed data
+  geom_line(data = plot_data, 
+            aes(x = date_vector, group = V, 
+                y = Fitted, color = V)) +  
   labs(x = "Date (2020)", y = "Cases") +
   scale_x_date(date_labels = "%b-%d", date_breaks = "1 month") +  
-  theme_bw()
-
+  theme_bw() +
+  scale_color_manual(name="",
+                     labels=c("A+B","A", "B"),
+                     values = alpha(values, 0.8)) +
+  scale_fill_manual(name="",
+                    labels=c("A+B","A", "B"),
+                    values = alpha(values, 0.3)) +
+  theme(legend.background = element_blank(),
+        legend.position = c(0.83,0.75))
+p
+pdf(paste0("Output/acrosshostWH.pdf"), width = 2.8, height = 1.8)
+print(p)
+dev.off()
 
 
 
