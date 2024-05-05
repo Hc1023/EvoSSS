@@ -23,90 +23,134 @@ viral_model <- function(t, state, parameters) {
 }
 
 # Parameters
-params <- c(r1 = 0.1, r2 = 0.2, K = 100, 
-            alpha12 = 0.8, alpha21 = 0.2, 
+rbase = log2(exp(1))/3
+Kbase = 2^12
+Kbase = 2^20
+params <- c(r1 = rbase, r2 = (rbase+0.05), K = Kbase, 
+            alpha12 = 1, alpha21 = 0, 
             mu = 0)
 
 # Initial state
-state <- c(V1 = 10, V2 = 10)
+state <- c(V1 = 1, V2 = 1)
 
 # Time sequence for the simulation
-times <- seq(0, 100, by = 1)
+times <- seq(0, 72, by = 0.1)
 
 # Solve the model
 out <- ode(y = state, times = times, func = viral_model, parms = params)
 out_df <- as.data.frame(out)
-
 # Plotting
 ggplot(data = out_df, aes(x = time)) +
   geom_line(aes(y = V1, color = "Strain 1")) +
   geom_line(aes(y = V2, color = "Strain 2")) +
   labs(y = "Population unit", x = "Time unit", color = "Strain") +
-  theme_minimal()
-
-
-
+  theme_bw() +
+  scale_x_continuous(breaks = c(0,24,48,72)) +
+  scale_y_continuous(labels = label_scientific(digits = 3))
 
 ########### Try different settings ##########
 
+withinhost_fun = function(param_sets){
+  # Initial state and time sequence
+  state <- c(V1 = 1, V2 = 1)
+  times <- seq(0, 72, by = 0.1)
+  
+  # Run simulations for each parameter set
+  results <- lapply(seq(nrow(param_sets)), function(i) {
+    params <- unlist(param_sets[i, ])
+    out <- ode(y = state, times = times, func = viral_model, parms = params)
+    out_df <- as.data.frame(out)
+    out_df$r1 <- params['r1']
+    out_df$r2 <- params['r2']
+    return(out_df)
+  })
+  
+  # Combine all dataframes into one
+  combined_results <- bind_rows(results)
+  
+  return(combined_results)
+  
+}
+
+transform_data = function(combined_results){
+  # Transform data for plotting
+  long_data <- pivot_longer(combined_results, cols = c("V1", "V2"), names_to = "Strain", values_to = "Population")
+  long_data$Population_label = long_data$Population/10^4
+  long_data$group = long_data$r2 - long_data$r1
+  long_data$group[long_data$Strain == 'V1'] = 'V1'
+  long_data$group = factor(long_data$group, levels = unique(long_data$group))
+  return(long_data) 
+}
+
+ratio_fun = function(combined_results){
+  long_data_transformed <- combined_results %>%
+    mutate(ratio = V1/(V1+V2), group = r2-r1) %>%
+    select(time, group, ratio)
+  data_ratio = long_data_transformed[long_data_transformed$time %in%
+                                     c(0,24,48,72),]
+  return(data_ratio)
+}
+
+getplot = function(param_sets){
+  combined_results = withinhost_fun(param_sets)
+  long_data = transform_data(combined_results)
+  data_ratio = ratio_fun(combined_results)
+  
+  values = alpha(c(hue_pal()(3)[1], '#2A41AF', '#4D7AAF', '#619CAF', '#85BDAF'),0.7)
+  # Plotting
+  p1 = ggplot(long_data, aes(x = time, y = Population_label)) +
+    geom_line(data = long_data, 
+              aes(group = group, color = group)) +
+    scale_color_manual(values = values, name = expression('Strain'/Delta*r)) +
+    labs(y = "", x = "Time unit", color = "Strain") +
+    theme_bw() +
+    theme(legend.position = "none") +
+    scale_x_continuous(breaks = c(0,24,48,72)) +
+    scale_y_continuous(n.breaks = 3)
+
+  p2 = ggplot(data_ratio, aes(x = time, y = ratio, color = factor(group))) +
+    geom_line() +
+    geom_point() +
+    scale_color_manual(values = values[-1], 
+                       name = expression(Delta*r)) +
+    labs(y = "", x = "Time unit", color = "r2 value") +
+    theme_bw() +
+    theme(legend.position = "none") +
+    scale_x_continuous(breaks = c(0,24,48,72)) + 
+    scale_y_continuous(limits = c(0, 1), 
+                       minor_breaks = seq(0 , 1, 0.25),
+                       n.breaks = 3)
+
+  return(list(p1, p2))
+}
+
 # Parameter sets for multiple simulations
-param_sets <- expand.grid(r1 = c(0.1), r2 = c(0.09, 0.1, 0.12, 0.15, 0.2), K = 100,
-                          alpha12 = 0, alpha21 = 0, mu = 0)
-
-# Initial state and time sequence
-state <- c(V1 = 10, V2 = 10)
-times <- seq(0, 100, by = 1)
-
-# Run simulations for each parameter set
-results <- lapply(seq(nrow(param_sets)), function(i) {
-  params <- unlist(param_sets[i, ])
-  out <- ode(y = state, times = times, func = viral_model, parms = params)
-  out_df <- as.data.frame(out)
-  out_df$r1 <- params['r1']
-  out_df$r2 <- params['r2']
-  return(out_df)
-})
-
-# Combine all dataframes into one
-combined_results <- bind_rows(results)
-
-# Transform data for plotting
-long_data <- pivot_longer(combined_results, cols = c("V1", "V2"), names_to = "Strain", values_to = "Population")
-
-# Plotting
-values = alpha(c(hue_pal()(3)[1], hue_pal()(3)[3]),0.7)
-# Define shapes for different r2 values
-# shapes <- c("0.05" = 16, "0.1" = 17, "0.15" = 18, "0.2" = 19)  # Using different shape numbers
-filtered_points <- long_data %>%
-  filter(Strain == "V2", time %in% seq(0, 100, by = 5))
-
-# Plotting
-ggplot(long_data, aes(x = time, y = Population, color = Strain)) +
-  geom_line(data = filter(long_data, Strain == "V1"), linewidth = 1.2) +
-  geom_line(data = filter(long_data, Strain == "V2"), aes(group = factor(r2)), linewidth = 0.5) +
-  geom_point(data = filtered_points, aes(shape = factor(r2)), size = 1) +
-  scale_color_manual(values = values, labels = c("Strain 1", "Strain 2")) +
-  # scale_shape_manual(values = shapes, name = "r2", labels = c("0.05", "0.1", "0.15", "0.2")) +
-  labs(y = "Population unit", x = "Time unit", color = "Strain") +
-  theme_bw() +
-  theme(legend.position = "top")
+rbase = log2(exp(1))/3
+Kbase_vec = c(2^20, 2^12)
+plist_all = list()
+for (i in  1:2) {
+  Kbase = Kbase_vec[i]
+  param_sets <- expand.grid(r1 = rbase, 
+                            r2 = rbase + c(0.01, 0.02, 0.05, 0.1), 
+                            K = Kbase, 
+                            alpha12 = 1, 
+                            alpha21 = 0, 
+                            mu = 0)
+  plist = getplot(param_sets)
+  plist_all[[i*2-1]] = plist[[1]]
+  plist_all[[i*2]] = plist[[2]]
+  
+}
 
 
-# Calculate e^(V1 - V2) and prepare the data
-long_data_transformed <- combined_results %>%
-  mutate(ExpDiff = V1/V2) %>%
-  select(time, r2, ExpDiff)
+pdf(paste0("Output/within_host.pdf"), width = 2, height = 1.2)
+print(plist_all[[1]])
+print(plist_all[[2]])
+print(plist_all[[3]])
+print(plist_all[[4]])
+dev.off()
 
-values <- c('#4D7ACC', '#5A8BD9', '#619CFF', '#7CB2FF', '#99C9FF')
-values <- c('#2A41AF', '#4D7AAF', '#619CAF', '#85BDAF', '#A8D4AF')
 
-# Plotting
-ggplot(long_data_transformed, aes(x = time, y = ExpDiff, color = factor(r2))) +
-  geom_line() +
-  scale_color_manual(values = values, name = "r2") +
-  labs(y = expression(beta[1]/beta[2]), x = "Time unit", color = "r2 value") +
-  theme_bw() +
-  theme(legend.position = "top")
 
 # Define a function for finding equilibrium, adjusted for rootSolve
 viral_model_equilibrium <- function(x, params) {
