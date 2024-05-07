@@ -9,9 +9,15 @@ data {
 }
 
 parameters {
-  int<lower=0, upper=T-70> t1_intro;  // Introduction time of strain 1
+  real<lower=0, upper=T-70> t1_intro;  // Introduction time of strain 1
+  real<lower=0, upper=T-70> t2_intro;  // Introduction time of strain 2
+
 }
 
+transformed parameters {
+  int t1_intro_int = round(t1_intro);  // Convert to integer
+  int t2_intro_int = round(t2_intro);  // Convert to integer
+}
 
 model {
   vector[T] S;
@@ -25,12 +31,14 @@ model {
   // Initial conditions
   S[1] = S0;
   I1[1] = 0;
-  I2[1] = I0;
+  I2[1] = 0;
   R[1] = 0;
 
   for (t in 1:(T-1)) {
     if (t >= t1_intro && I1[t] == 0)
       I1[t] = I0;
+    if (t >= t2_intro && I2[t] == 0)
+      I2[t] = I0;
 
     S[t+1] = S[t] - beta * S[t] * I1[t] / N - beta * S[t] * I2[t] / N ;
     I1[t+1] = I1[t] + beta * S[t] * I1[t] / N - gamma * I1[t];
@@ -54,4 +62,5 @@ model {
 
   // Priors
   t1_intro ~ uniform(5, 10);
+  t2_intro ~ uniform(5, 10);
 }

@@ -5,96 +5,39 @@ library(scales)
 
 realData_all <- read.csv("Covid19CasesWH.csv", row.names = 1)
 CaseNum = realData_all$CaseNum
+I0 = sum(CaseNum[22:24])
 
-observed_cases = realData$CaseNum
+load(file = 'evoSIR_eqbeta.rdata')
+posterior_samples <- extract(fit)
 
-retro = 40
-observed_cases = CaseNum[-c(1:24)]
+beta = posterior_samples$beta
+gamma = posterior_samples$gamma
+I10 = posterior_samples$I10
+I20 = I0 - I10
+hist(beta-gamma)
 
-# Define data
-N = sum(CaseNum)
 
-stan_data <- list(
-  N = N,
-  S0 = N - 1,
-  T =  length(observed_cases) + retro,
-  cases = c(rep(0, retro), observed_cases)
-)
+time_intro1 = log(I10)/(beta-gamma) # - log(ratio)
+time_intro2 = log(I20)/(beta-gamma) # - log(ratio)
 
-# Define data
-N = sum(CaseNum)
-S0 <- N - I0
-ndays <- length(observed_cases)
+delta1 = time_intro2-time_intro1
+hist(delta1)
 
-update_fun = function(pars, states_old){
-  
-  S <- states_old[1]
-  I1 <- states_old[2]
-  I2 <- states_old[3]
-  
-  beta = pars[3]
-  gamma = pars[4]
-  
-  S_new = S - beta*S*I1/N - beta*S*I2/N
-  I1_new = I1 + beta*S*I1/N - gamma*I1
-  I2_new = I2 + beta*S*I2/N - gamma*I2
-  Onset1 = beta*S*I1/N
-  Onset2 = beta*S*I2/N
-  
-  return(c(S_new, I1_new, I2_new, Onset1, Onset2))
+load(file = 'evoSIR.rdata')
+df2 = data.frame()
+for (i in 1:9) {
+  fit = fitlist[[i]]
+  posterior_samples <- extract(fit)
+  beta1 = posterior_samples$beta1
+  beta2 = posterior_samples$beta2
+  gamma = posterior_samples$gamma
+  ratio = i/10
+  I10 = round(sum(CaseNum[22:24])*ratio)
+  I20 = round(sum(CaseNum[22:24])*(1-ratio))
+  time_intro1 = log(I10)/(beta1-gamma) # - log(m)
+  time_intro2 = log(I20)/(beta2-gamma) # - log(m)
+  df = data.frame(x = i, y = time_intro2-time_intro1)
+  df2 = rbind(df2, df)
 }
-
-
-simu <- function(pars = c(10,5,0.3,0.15), 
-                 states_old = c(S0,0,0), 
-                 ndays = 100, f = update_fun) {
-  # Initial conditions
-  states_old = c(states_old, NA, NA)
-  
-  # Simulate the dynamics over ndays
-  mycol <- c("time", "S", "I1", "I2", "Onset1", "Onset2")
-  states_mat <- matrix(0, ndays, length(mycol))
-  states_mat[, 1] <- 1:ndays
-  states_mat[1, 2:length(mycol)] <- states_old
-  
-  colnames(states_mat) <- mycol
-  t1_intro = pars[1]
-  t2_intro = pars[2]
-  
-  for (t in 1:(ndays-1)) {
-    if (t >= t1_intro && states_old['I1'] == 0) {
-      states_old['I1'] = 1
-    }
-    if (t >= t2_intro && states_old['I2'] == 0) {
-      states_old['I2'] = 1 
-    }
-    states_mat[t+1, -1] <- f(pars = pars, states_old = states_old)
-    states_old <- states_mat[t+1, -1]
-  }
-  
-  return(states_mat)
-}
-
-
-states_mat = simu()
-observed_cases
-ndays = 100
-data_observed = data.frame(Day =  1:ndays,
-                           Observed = c(rep(0, ndays- length(observed_cases)), observed_cases))
-
-plot_data <- data.frame(
-  Day = rep(1:ndays,3),
-  Fitted = c(states_mat[,'Onset1'], states_mat[,'Onset2'],
-             states_mat[,'Onset1']+states_mat[,'Onset2']),
-  V = rep(c('V1','V2','All'), each = ndays)
-)
-
-ggplot() +
-  geom_point(data = data_observed, 
-             aes(x = Day, y = Observed), 
-             size = 0.5, alpha = 0.5) +  # Observed data
-  geom_line(data = plot_data, 
-            aes(x = Day, group = V, 
-                y = Fitted, color = V))
-
-
+library(ggpubr)
+ggboxplot(df2, x = "x", y = "y")
