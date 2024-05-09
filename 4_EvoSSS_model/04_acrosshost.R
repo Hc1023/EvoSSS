@@ -5,18 +5,25 @@ library(scales)
 realData_all <- read.csv("Covid19CasesWH.csv", row.names = 1)
 realData <- realData_all[-c(1:24), ] 
 observed_cases = realData$CaseNum
+load(file = 'evoSIR.rdata')
+
+i = 4
+fit = fitlist[[i]]
+posterior_samples <- extract(fit)
 
 # Define data
-N = sum(observed_cases)
-I0 = sum(realData_all$CaseNum[22:24])
-I10 = I0*0.5
-I20 = I0*0.5
-S0 <- N - I0
-ndays <- length(observed_cases)
+{
+  N = sum(observed_cases)
+  CaseNum = realData_all$CaseNum
+  observed_cases = CaseNum[-c(1:24)]
+  ratio = i/10
+  I10 = round(sum(CaseNum[22:24])*ratio)
+  I20 = round(sum(CaseNum[22:24])*(1-ratio))
+  S0 <- N - I10 - I20
+  ndays <- length(observed_cases)
+}
 
-load(file = 'SIR.rdata')
-fit = fitlist[[5]]
-posterior_samples <- extract(fit)
+
 
 update_fun = function(pars, states_old){
   
@@ -138,6 +145,7 @@ plot_data = rbind(df1, df2, df)
 
 sum(df1$Fitted, na.rm = T)
 sum(df2$Fitted, na.rm = T)
+sum(df1$Fitted, na.rm = T)/(sum(df1$Fitted, na.rm = T)+sum(df2$Fitted, na.rm = T))
 # Plot using ggplot2
 
 values = c("#aa85a6", hue_pal()(3)[1], hue_pal()(3)[3])
@@ -162,9 +170,9 @@ p = ggplot() +
                     labels=c("A+B","A", "B"),
                     values = alpha(values, 0.3)) +
   theme(legend.background = element_blank(),
-        legend.position = c(0.83,0.75))
+        legend.position = c(0.85,0.72))
 p
-pdf(paste0("Output/acrosshostWH.pdf"), width = 2.8, height = 1.8)
+pdf(paste0("Output/acrosshostWH.pdf"), width = 3, height = 1.6)
 print(p)
 dev.off()
 
