@@ -65,7 +65,7 @@ combined_results = withinhost_fun(param_sets)
 combined_results$r = combined_results$V1/(combined_results$V1 + combined_results$V2)
 
 dataplot = data.frame()
-for (i in 1:72) {
+for (i in 0:72) {
   df = combined_results[combined_results$time == i,]
   y = sapply(2:4, function(x){
     v = df[,x]
@@ -81,17 +81,45 @@ for (i in 1:72) {
 }
 
 colnames(dataplot)[4:5] = c('LowerCI', 'UpperCI')
+dataplot[dataplot$group != 'r',c(3:5)] = dataplot[dataplot$group != 'r',c(3:5)] / max(dataplot[dataplot$group != 'r',c(3:5)])
+dataplot$group = factor(dataplot$group, levels = c('A','B','r'))
 
-ggplot(dataplot, aes(x = time, y = m, group = group)) +
-  geom_ribbon(aes(ymin = LowerCI, ymax = UpperCI),  alpha = 0.6) +
-  geom_line()
+values = c(hue_pal()(3)[1], hue_pal()(3)[3], "#9ab9c6")
+p = ggplot(dataplot, aes(x = time, y = m, group = group)) +
+  geom_ribbon(data = filter(dataplot, group != "r"),
+              aes(ymin = LowerCI, ymax = UpperCI, fill = group),  
+              show.legend = F) +
+  geom_line(data = filter(dataplot, group != "r"), 
+            aes(x = time, y = m, color = group)) + 
+  geom_line(data = filter(dataplot, group == "r", time %in% c(0,24,48,72)), 
+            aes(x = time, y = m, color = group)) + 
+  geom_point(data = filter(dataplot, group == "r", time %in% c(0,24,48,72)), 
+            aes(x = time, y = m, color = group)) + 
+  theme_bw() + 
+  theme(legend.position = 'none',
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        axis.text.y.right = element_text(color = values[3]),
+        axis.title.y.right = element_text(color = values[3])) +
+  scale_color_manual(name="",
+                     labels=c("A", "B","Ratio"),
+                     values = alpha(values, 0.9)) +
+  scale_fill_manual(name="",
+                    labels=c("A", "B","Ratio"),
+                    values = alpha(values, 0.3)) +
+  scale_x_continuous(breaks = c(0,24,48,72)) + 
+  scale_y_continuous(limits = c(0, 1), 
+                     minor_breaks = seq(0 , 1, 0.25),
+                     breaks = c(0,0.5,1),
+                     labels = c('0','50','100'),
+                     name = 'Population \n(% of MAX)',
+                     sec.axis = sec_axis(
+                       transform = ~ ., 
+                       name = "Ratio of A",
+                       breaks = seq(0, 1, by = 0.5)
+                     )) +
+  xlab('Time unit')
 
-pdf(paste0("Output/within_host.pdf"), width = 2, height = 1.2)
-print(plist_all[[1]])
-print(plist_all[[2]])
-print(plist_all[[3]])
-print(plist_all[[4]])
+pdf(paste0("Output/withinhostWH.pdf"), width = 2.8, height = 1.5)
+print(p)
 dev.off()
-
-
-
