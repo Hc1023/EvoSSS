@@ -45,7 +45,7 @@ params3 = c(r1 = 0.4,
             mu = 0)
 paramlist = list(params1, params2, params3)
 
-equilibrium_fun = function(param){
+equilibrium_fun = function(params){
   # Initial state
   state <- c(V1 = 100000, V2 = 100000)
   times <- seq(0, 72, by = 1)
@@ -79,4 +79,24 @@ for (i in 1:3) {
   equilibrium_fun(paramlist[[i]])
 }
 
-
+# V1           V2 
+# 1.000000e+05 1.906811e-01 
+# [,1]          [,2]
+# [1,] -4.000000e-01  0.000000e+00
+# [2,] -8.580649e-07 -1.716126e-06
+# [1] -4.000000e-01 -1.716126e-06
+# The system is stable at the equilibrium.
+# V1           V2 
+# 1.000000e+05 9.545885e-02 
+# [,1]          [,2]
+# [1,] -6.000000e-01  0.000000e+00
+# [2,] -6.204825e-07 -1.240963e-06
+# [1] -6.000000e-01 -1.240963e-06
+# The system is stable at the equilibrium.
+# V1    V2 
+# 1e+05 1e+05 
+# [,1]  [,2]
+# [1,] -0.4  0.00
+# [2,]  0.0 -0.45
+# [1] -0.40 -0.45
+# The system is stable at the equilibrium.
