@@ -157,7 +157,7 @@ p1 = ggplot(data_ratio, aes(x = time, y = ratio, color = factor(group))) +
   geom_line() +
   geom_point() +
   scale_color_manual(values = values[-1], 
-                     name = expression(Delta*r)) +
+                     name = expression(r[B]-r[A])) +
   labs(y = "", x = "Time unit", color = "r2 value") +
   theme_bw() +
   theme(legend.position = "right",

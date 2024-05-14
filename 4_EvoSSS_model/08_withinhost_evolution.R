@@ -82,18 +82,17 @@ getplot = function(combined_results){
   p
   return(p)
 }
-rbase = log2(exp(1))/3
 
-Kbase = c(2^18)
-mu = (2*10^(-6))/(1/rbase)
+Kbase = 100000
+mu = 2*10^(-6)
 mu_vec = c(mu/2, mu, mu*10^3)
-param_sets1 <- expand.grid(r1 = rbase, r2 = rbase, K = Kbase, 
+param_sets1 <- expand.grid(r1 = 0.4, r2 = 0.4, K = 100000, 
                           alpha12 = 0, alpha21 = 0, 
                           mu = mu_vec)
-param_sets2 <- expand.grid(r1 = rbase, r2 = rbase, K = Kbase, 
+param_sets2 <- expand.grid(r1 = 0.4, r2 = 0.4, K = 100000, 
                           alpha12 = 0, alpha21 = 1, 
                           mu = mu_vec)
-param_sets3 <- expand.grid(r1 = rbase, r2 = rbase, K = Kbase, 
+param_sets3 <- expand.grid(r1 = 0.4, r2 = 0.4, K = 100000, 
                           alpha12 = 1, alpha21 = 0, 
                           mu = mu_vec)
 param_list = list(param_sets1, param_sets2, param_sets3)
@@ -112,7 +111,6 @@ transform_data = function(combined_results){
   long_data$group = factor(long_data$group, levels = unique(long_data$group))
   return(long_data) 
 }
-
 
 getplot2 = function(combined_results){
   values = c(hue_pal()(3)[1], hue_pal()(3)[3])
@@ -137,9 +135,7 @@ getplot2 = function(combined_results){
   return(p)
 }
 
-
-pdf(paste0("Output/mutations.pdf"), 
-    width = 1.5, height = 1.2)
+pdf(paste0("Output/withinhost_evolution.pdf"), width = 1.5, height = 1.2)
 getplot(results_list[[1]])
 getplot(results_list[[2]])
 getplot(results_list[[3]])
@@ -147,11 +143,10 @@ getplot2(results_list[[1]])
 getplot2(results_list[[2]])
 getplot2(results_list[[3]])
 dev.off()
+
+
 # SARS-CoV-2 mutation rate estimates of around 
 # 1 × 10–6–2 × 10–6 mutations per nucleotide per replication cycle 
-
-
-# mu = 0.03-0.06/(1/rbase)
 
 data_ratio = ratio_fun(results_list[[1]])
 data_ratio$group = factor(data_ratio$group,
@@ -170,7 +165,7 @@ p = ggplot(data_ratio,
                      label = c('1e-6','2e-6','2e-3')) +
   labs(y = "", x = "Time unit", color = "r2 value") +
   theme_bw() +
-  theme(legend.position = "top",
+  theme(legend.position = "right",
         legend.key.size = unit(0.4,'cm'),
         legend.key.width = unit(0.4,'cm'),
         legend.key = element_blank(),
@@ -181,7 +176,7 @@ p = ggplot(data_ratio,
                      minor_breaks = seq(0 , 1, 0.25),
                      n.breaks = 3)
 p
-pdf(paste0("Output/mutations_legend.pdf"), 
+pdf(paste0("Output/withinhost_evolution_legend.pdf"), 
     width = 3, height = 1.4)
 print(p)
 dev.off()
