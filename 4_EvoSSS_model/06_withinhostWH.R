@@ -4,6 +4,7 @@ library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(scales)
+
 # Define the model
 viral_model <- function(t, state, parameters) {
   V1 <- state[1]
@@ -26,7 +27,7 @@ viral_model <- function(t, state, parameters) {
 withinhost_fun = function(param_sets){
   # Initial state and time sequence
   state <- c(V1 = 1, V2 = 1)
-  times <- seq(0, 72, by = 1)
+  times <- seq(0, 72, by = 0.1)
   
   # Run simulations for each parameter set
   results <- lapply(seq(nrow(param_sets)), function(i) {
@@ -42,21 +43,17 @@ withinhost_fun = function(param_sets){
   
 }
 
-
-
 # Parameters
 load(file = 'evoSIR.rdata')
 fit = fitlist[[4]]
-posterior_samples <- extract(fit)
+posterior_samples <- rstan::extract(fit)
 
 c = posterior_samples$beta1/posterior_samples$beta2
 deltar = -log(c)
 
-rbase = log2(exp(1))/3
-Kbase = 2^18
-param_sets <- expand.grid(r1 = rbase, 
-                          r2 = rbase + deltar[1:50], 
-                          K = Kbase, 
+param_sets <- expand.grid(r1 = 0.4, 
+                          r2 = 0.4 + deltar[1:10], 
+                          K = 100000, 
                           alpha12 = 1, 
                           alpha21 = 0, 
                           mu = 0)
@@ -65,7 +62,7 @@ combined_results = withinhost_fun(param_sets)
 combined_results$r = combined_results$V1/(combined_results$V1 + combined_results$V2)
 
 dataplot = data.frame()
-for (i in 0:72) {
+for (i in seq(0,72,0.1)) {
   df = combined_results[combined_results$time == i,]
   y = sapply(2:4, function(x){
     v = df[,x]
@@ -86,9 +83,9 @@ dataplot$group = factor(dataplot$group, levels = c('A','B','r'))
 
 values = c(hue_pal()(3)[1], hue_pal()(3)[3], "#9ab9c6")
 p = ggplot(dataplot, aes(x = time, y = m, group = group)) +
-  geom_ribbon(data = filter(dataplot, group != "r"),
-              aes(ymin = LowerCI, ymax = UpperCI, fill = group),  
-              show.legend = F) +
+  # geom_ribbon(data = filter(dataplot, group != "r"),
+  #             aes(ymin = LowerCI, ymax = UpperCI, fill = group),  
+  #             show.legend = F) +
   geom_line(data = filter(dataplot, group != "r"), 
             aes(x = time, y = m, color = group)) + 
   geom_line(data = filter(dataplot, group == "r", time %in% c(0,24,48,72)), 
@@ -119,7 +116,7 @@ p = ggplot(dataplot, aes(x = time, y = m, group = group)) +
                        breaks = seq(0, 1, by = 0.5)
                      )) +
   xlab('Time unit')
-
-pdf(paste0("Output/withinhostWH.pdf"), width = 2.8, height = 1.5)
+p
+pdf(paste0("Output/withinhostWH.pdf"), width = 2.8, height = 1.6)
 print(p)
 dev.off()

@@ -4,6 +4,7 @@ library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(scales)
+
 # Define the model
 viral_model <- function(t, state, parameters) {
   V1 <- state[1]
@@ -141,7 +142,7 @@ param_sets <- expand.grid(r1 = 0.6,
                           K = 100000, alpha12 = 1, alpha21 = 0, mu = 0)
 plist2 = getplot(param_sets)
 
-pdf(paste0("Output/within_host.pdf"), width = 1.8, height = 1.2)
+pdf(paste0("Output/withinhost.pdf"), width = 1.8, height = 1.2)
 print(plist1[[1]])
 print(plist1[[2]])
 print(plist2[[1]])
@@ -168,35 +169,6 @@ p1 = ggplot(data_ratio, aes(x = time, y = ratio, color = factor(group))) +
 
 p1
 
-pdf(paste0("Output/within_host_legend.pdf"), width = 1.8, height = 1.5)
+pdf(paste0("Output/withinhost_legend.pdf"), width = 1.8, height = 1.5)
 print(p1)
 dev.off()
-
-# Define a function for finding equilibrium, adjusted for rootSolve
-viral_model_equilibrium <- function(x, params) {
-  viral_model(t = 0, state = x, parameters = params)[[1]]
-}
-
-# Find equilibrium
-equilibrium <- multiroot(f = viral_model_equilibrium, start = state, parameters = params)
-print(equilibrium$root)  # Display equilibrium points
-
-# Function to wrap viral_model_equilibrium for numDeriv
-func_for_jacobian <- function(x) {
-  viral_model_equilibrium(x, params)
-}
-
-# Compute Jacobian at equilibrium using numDeriv
-J_at_eq <- jacobian(func = func_for_jacobian, x = equilibrium$root)
-print(J_at_eq)  # Print Jacobian matrix
-
-# Eigenvalues for stability analysis
-eigenvalues <- eigen(J_at_eq)$values
-print(eigenvalues)  # Print eigenvalues
-
-# Check stability
-if (all(Re(eigenvalues) < 0)) {
-  cat("The system is stable at the equilibrium.\n")
-} else {
-  cat("The system is unstable at the equilibrium.\n")
-}

@@ -20,7 +20,7 @@ stanfit = function(CaseNum, ratio){
   )
 
   # Fit the model
-  fit <- stan(file = 'SIR.stan', data = stan_data, 
+  fit <- stan(file = 'evoSIR.stan', data = stan_data, 
               iter = 15000, chains = 4, warmup = 10000,
               verbose = TRUE)
   
@@ -39,12 +39,9 @@ for (i in c(1:9)) {
 }
 
 # print(fit)
-save(fitlist, file = 'SIR.rdata')
+save(fitlist, file = 'evoSIR.rdata')
 
 # Generate trace plots for beta and gamma
-
-
-
 pdf(file = 'Output/acrosshost_sensitivity.pdf', 
     width = 9, height = 2)
 
