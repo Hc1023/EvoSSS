@@ -55,7 +55,7 @@ simu <- function(seed_mat_list, dim, f = update_fun) {
     states_old = states_mat[1:3]
     states_old[,2:3] = states_old[,2:3] + cbind(seed_mat_I1[t+1,], seed_mat_I2[t+1,])
     
-    Onsets_mat[t+1,-1] = c(sum(states_mat[4]), sum(states_mat[5]))
+    Onsets_mat[t+1,-1] = c(sum(states_mat[,4]), sum(states_mat[,5]))
   }
   
   return(data.frame(Onsets_mat))
@@ -74,13 +74,16 @@ seed_mat_list[[3]] = rep(32583, dim)
 Onsets_mat_list = list()
 Onsets_mat = simu(seed_mat_list, dim)
 Onsets_mat_list[[1]] = Onsets_mat
-Onsets_mat = Onsets_mat_list[[1]]
+
 # 
 n = 1
 
 
 poolday = 30
-contact_vec = c(10^3,10^3)
+contact_vec = c(10000,100,100,150,280,260,260,260,260,260,260,
+                260,260,260,150,160,200,400,300,200,200,260)
+Onsets_mat = Onsets_mat_list[[1]]
+{
 for (n in 1:length(contact_vec)) {
   # seeding_time = 1:dim + spacing*(n-1)
   
@@ -163,3 +166,4 @@ ggplot() +
   xlab('Date (2019-2021)') +
   ylab('') + theme_bw() 
 
+}

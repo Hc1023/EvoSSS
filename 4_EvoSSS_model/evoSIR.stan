@@ -29,7 +29,7 @@ model {
   R[1] = 0;
 
   for (t in 1:(T-1)) {
-    S[t+1] = S[t] - beta1 * S[t] * I1[t] / N - beta2 * S[t] * I2[t] / N ;
+    S[t+1] = S[t] - beta1 * S[t] * I1[t] / N - beta2 * S[t] * I2[t] / N;
     I1[t+1] = I1[t] + beta1 * S[t] * I1[t] / N - gamma * I1[t];
     I2[t+1] = I2[t] + beta2 * S[t] * I2[t] / N - gamma * I2[t];
     R[t+1] = R[t] + gamma * I1[t] + gamma * I2[t];
