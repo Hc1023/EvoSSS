@@ -65,7 +65,6 @@ functions {
 
 data {
   int<lower = 1> poolday;
-  real<lower = 1> contact_init;
   // expected_matrix : observed_matrix - last onsets 
   int expected_matrix[poolday, 2]; 
   vector[3] pars;
@@ -92,7 +91,7 @@ model {
   }
 
   // Priors
-  contact ~ normal(contact_init, 5);
+  contact ~ normal(100, 10);
 }
 
 
