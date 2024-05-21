@@ -66,9 +66,9 @@ p = ggplot(plot_data, aes(x = date_vector, group = Mutations)) +
   geom_ribbon(aes(ymin = LowerCI, ymax = UpperCI, fill = Mutations),  alpha = 0.6) +  # Confidence interval
   scale_y_continuous(trans=scales::pseudo_log_trans(base=2),
                      breaks = c(0,2^seq(2,14,3)),
-                     labels = c(0, expression('10'^'2'),expression('10'^'5'),
-                                expression('10'^'8'),expression('10'^'11'),
-                                expression('10'^'14'))) +
+                     labels = c(0, expression('2'^'2'),expression('2'^'5'),
+                                expression('2'^'8'),expression('2'^'11'),
+                                expression('2'^'14'))) +
   annotation_logticks(linewidth = 0.1, alpha = 0.5) +
   geom_point(aes(y = Observed, color = Mutations), size = 0.4, alpha = 0.5, shape = 16) + 
   geom_line(aes(y = Observed, color = Mutations), linewidth = 0.2, alpha = 0.5) +  # Observed data

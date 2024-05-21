@@ -1,43 +1,31 @@
 functions {
-  matrix update_fun(vector pars, matrix states_old, vector N, int poolday){
-    // Function to update disease states
-    // poolday : number of hostpots
-    vector[poolday] S = to_vector(states_old[, 1]);  // Susceptible individuals
-    vector[poolday] I1 = to_vector(states_old[, 2]); // Infected individuals, lineage 1
-    vector[poolday] I2 = to_vector(states_old[, 3]); // Infected individuals, lineage 2
-
+  matrix simu(matrix seed_mat_I1, matrix seed_mat_I2, vector N, int poolday, vector pars, int n){
+    // Initial conditions
+    // seeds for number of poolday
+    matrix[n, 2] Onsets_mat;
+    
     real beta1 = pars[1]; // Transmission rate for lineage 1
     real beta2 = pars[2]; // Transmission rate for lineage 2
     real gamma = pars[3]; // Recovery rate
 
-    matrix[poolday, 5] updates;
+    vector[poolday] S;
+    vector[poolday] I1;
+    vector[poolday] I2;
 
-    for (i in 1:poolday){
-      updates[i, 1] = S[i] - beta1 * S[i] * I1[i] / N[i] - beta2 * S[i] * I2[i] / N[i]; // Update for Susceptible
-      updates[i, 2] = I1[i] + beta1 * S[i] * I1[i] / N[i] - gamma * I1[i];              // Update for Infected lineage 1
-      updates[i, 3] = I2[i] + beta2 * S[i] * I2[i] / N[i] - gamma * I2[i];              // Update for Infected lineage 2
-      updates[i, 4] = beta1 * S[i] * I1[i] / N[i];                                      // Onset of new cases for lineage 1
-      updates[i, 5] = beta2 * S[i] * I2[i] / N[i];                                      // Onset of new cases for lineage 2
-    }
-
-    return updates;
-  }
-
-  matrix simu(matrix seed_mat_I1, matrix seed_mat_I2, vector N, int poolday, vector pars){
-    // Initial conditions
-    // seeds for number of poolday
-    matrix[poolday, 2] Onsets_mat;
-    matrix[poolday, 5] states_old;
+    //  update states_new
+    vector[poolday] S_new;
+    vector[poolday] I1_new;
+    vector[poolday] I2_new;
 
     // Initialize states_old
-    states_old[1, 1] = N[1] - seed_mat_I1[1,1] - seed_mat_I2[1,1];
-    states_old[1, 2] = seed_mat_I1[1,1];
-    states_old[1, 3] = seed_mat_I2[1,1];  
+    S[1] = N[1] - seed_mat_I1[1,1] - seed_mat_I2[1,1];
+    I1[1] = seed_mat_I1[1,1];
+    I2[1] = seed_mat_I2[1,1];  
     
     for (i in 2:poolday){
-      states_old[i, 1] = N[i];
-      states_old[i, 2] = 0;
-      states_old[i, 3] = 0;
+      S[i] = N[i];
+      I1[i] = 0;
+      I2[i] = 0;
     }
 
     // Initialize Onsets matrix
@@ -45,28 +33,36 @@ functions {
     Onsets_mat[1, 2] = 0;
 
     // Simulate for poolday
-    for (t in 2:poolday){
+    for (t in 2:n){
       // Update states
-      states_old = update_fun(pars, states_old, N, poolday);
-
-      // migrate seeds in t th day at t th hotspot
-      states_old[t, 2] += seed_mat_I1[t, t];
-      states_old[t, 3] += seed_mat_I2[t, t];
+      S_new = S - beta1 * S .* I1 ./ N - beta2 * S .* I2 ./ N; // Update for Susceptible 
+      I1_new = I1 + beta1 * S .* I1 ./ N - gamma * I1;       // Update for Infected lineage 1
+      I2_new = I2 + beta2 * S .* I2 ./ N - gamma * I2;       // Update for Infected lineage 2
 
       // pool onsets of hotspots
-      Onsets_mat[t, 1] = sum(states_old[, 4]);
-      Onsets_mat[t, 2] = sum(states_old[, 5]);
+      Onsets_mat[t, 1] = sum(beta1 * S .* I1 ./ N); 
+      Onsets_mat[t, 2] = sum(beta2 * S .* I2 ./ N); 
+
+      // migrate seeds in t th day at t th hotspot
+      if (t <= poolday) {
+        I1_new[t] += seed_mat_I1[t, t];
+        I2_new[t] += seed_mat_I2[t, t];
+      }
+
+      S = S_new;
+      I1 = I1_new;
+      I2 = I2_new;
     }
 
     return Onsets_mat;
   }
 }
 
-
 data {
   int<lower = 1> poolday;
+  int<lower = 1> nday;
   // expected_matrix : observed_matrix - last onsets 
-  int expected_matrix[poolday, 2]; 
+  int expected_matrix[nday, 2]; 
   vector[3] pars;
   matrix[poolday, poolday] seed_mat_I1;
   matrix[poolday, poolday] seed_mat_I2;
@@ -77,14 +73,15 @@ parameters {
   real<lower = 1> contact; // potential susceptible contacts
 }
 
+
 model {
   vector[poolday] N;
-  matrix[poolday, 2] simu_mat; 
+  matrix[nday, 2] simu_mat;
 
   N = seed_vec * contact + 1; // >=1
-  simu_mat = simu(seed_mat_I1, seed_mat_I2, N, poolday, pars); 
-      
-  for (i in 2 : poolday) {
+  simu_mat = simu(seed_mat_I1, seed_mat_I2, N, poolday, pars, nday); 
+  
+  for (i in 2 : nday) {
     // likelihood of observed data
     expected_matrix[i, 1] ~ poisson(simu_mat[i, 1]);
     expected_matrix[i, 2] ~ poisson(simu_mat[i, 2]);
