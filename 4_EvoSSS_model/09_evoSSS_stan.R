@@ -130,26 +130,29 @@ for (n in 1:24) {
 }
 
 save(fitlist, file = 'evoSSS_chain.rdata')
+load('evoSSS_chain.rdata')
 posterior = rstan::extract(fitlist[[1]])
 posterior$contact[1:5000]
 
 
 # Generate trace plots 
-
-for (i in 1:length(fitlist)) {
-  wd = paste0('Output/traceplot/evoSSS_', 
-              as.character(i), '.png')
-  png(file = wd, 
-      width = 2.5, height = 2, 
-      unit = 'in',
-      res = 600)
-  p = traceplot(fitlist[[i]]) + 
-    ggtitle(as.character(i)) + ylab('') +
-    theme(legend.position = 'none') + 
-    scale_x_continuous(breaks = seq(10000,15000,2500),
-                       labels = seq(0,5000,2500))
-  print(p)
-  dev.off()
+if(F){
+  for (i in 1:length(fitlist)) {
+    wd = paste0('Output/traceplot/evoSSS_', 
+                as.character(i), '.png')
+    png(file = wd, 
+        width = 2.5, height = 2, 
+        unit = 'in',
+        res = 600)
+    p = traceplot(fitlist[[i]]) + 
+      ggtitle(as.character(i)) + ylab('') +
+      theme(legend.position = 'none') + 
+      scale_x_continuous(breaks = seq(10000,15000,2500),
+                         labels = seq(0,5000,2500))
+    print(p)
+    dev.off()
+  }
+  
 }
 
 dfposterior = data.frame()
@@ -167,11 +170,11 @@ for (i in 1:length(fitlist)) {
   
 }
 
-write.csv(dfposterior, file = 'Output/evoSSS_parameters.csv',
-          row.names = F)
+if(F){
+  write.csv(dfposterior, file = 'Output/evoSSS_parameters.csv',
+            row.names = F)
+}
 
-
-dfposterior
 ggplot(dfposterior, aes(V1, m)) +
   geom_line() +
   geom_point(shape = 19, alpha = 0.6) +
