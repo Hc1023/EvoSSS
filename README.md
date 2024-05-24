@@ -1,4 +1,4 @@
-# EarlyDynamic & SSS Model
+# EvoSSS
 Codes and intermediary files for reproducing figures from “...”, by Sisi Huang, ...\*, ..., and Chao Jiang\*. (*co-corresponding authors)
 
 ## 1. Viral analysis of early COVID-19 patients
