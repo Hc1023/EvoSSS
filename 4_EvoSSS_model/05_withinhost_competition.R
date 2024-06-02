@@ -23,35 +23,6 @@ viral_model <- function(t, state, parameters) {
   return(list(c(dV1dt, dV2dt)))
 }
 
-# Initial state
-state <- c(V1 = 1, V2 = 1)
-
-# Time sequence for the simulation
-times <- seq(0, 72, by = 0.1)
-params = c(r1 = 0.4, 
-  r2 = 0.45, 
-  K = 100000, 
-  alpha12 = 1, 
-  alpha21 = 0, 
-  mu = 0)
-params = c(r1 = 0.6, 
-           r2 = 0.65, 
-           K = 100000, 
-           alpha12 = 1, 
-           alpha21 = 0, 
-           mu = 0)
-# Solve the model
-out <- ode(y = state, times = times, func = viral_model, parms = params)
-out_df <- as.data.frame(out)
-# Plotting
-ggplot(data = out_df, aes(x = time)) +
-  geom_line(aes(y = V1, color = "Strain 1")) +
-  geom_line(aes(y = V2, color = "Strain 2")) +
-  labs(y = "Population unit", x = "Time unit", color = "Strain") +
-  theme_bw() +
-  scale_x_continuous(breaks = c(0,24,48,72)) +
-  scale_y_continuous(labels = label_scientific(digits = 3))
-
 ########### Try different settings ##########
 
 withinhost_fun = function(param_sets){
@@ -99,8 +70,11 @@ getplot = function(param_sets){
   combined_results = withinhost_fun(param_sets)
   long_data = transform_data(combined_results)
   data_ratio = ratio_fun(combined_results)
-  
-  values = alpha(c(hue_pal()(3)[1], '#2A41AF', '#4D7AAF', '#619CAF', '#85BDAF'),0.7)
+  v = '#2A41AF'
+  values = c(alpha(v, 0.9), alpha(v, 0.6), 
+             alpha(v, 0.4), alpha(v, 0.2))
+  # values = alpha(c(hue_pal()(3)[1], '#2A41AF', '#4D7AAF', '#619CAF', '#85BDAF'),0.7)
+  values = c(hue_pal()(3)[1], values)
   # Plotting
   p1 = ggplot(long_data, aes(x = time, y = Population_label)) +
     geom_line(data = long_data, 
@@ -110,7 +84,7 @@ getplot = function(param_sets){
     theme_bw() +
     theme(legend.position = "none") +
     scale_x_continuous(breaks = c(0,24,48,72)) +
-    scale_y_continuous(n.breaks = 3)
+    scale_y_continuous(n.breaks = 3, labels = c(0,50,100))
 
   p2 = ggplot(data_ratio, aes(x = time, y = ratio, color = factor(group))) +
     geom_line() +
@@ -123,36 +97,46 @@ getplot = function(param_sets){
     scale_x_continuous(breaks = c(0,24,48,72)) + 
     scale_y_continuous(limits = c(0, 1), 
                        minor_breaks = seq(0 , 1, 0.25),
-                       n.breaks = 3)
+                       breaks = c(0,0.5,1), labels = c(0,50,100))
 
   return(list(p1, p2))
 }
 
 # Parameter sets for multiple simulations
 
-param_sets <- expand.grid(r1 = 0.4, 
-                          r2 = 0.4 + c(0.02, 0.05, 0.1, 0.2), 
-                          K = 100000, alpha12 = 1, alpha21 = 0, mu = 0)
+param_sets <- expand.grid(r1 = 0.2, 
+                          r2 = 0.2 + c(0.02, 0.05, 0.1, 0.2), 
+                          K = 5000, alpha12 = 2, alpha21 = 0, mu = 0)
 
 
 plist1 = getplot(param_sets)
   
-param_sets <- expand.grid(r1 = 0.6, 
-                          r2 = 0.6 + c(0.02, 0.05, 0.1, 0.2), 
-                          K = 100000, alpha12 = 1, alpha21 = 0, mu = 0)
+param_sets <- expand.grid(r1 = 0.4, 
+                          r2 = 0.4 + c(0.02, 0.05, 0.1, 0.2), 
+                          K = 5000, alpha12 = 2, alpha21 = 0, mu = 0)
 plist2 = getplot(param_sets)
 
-pdf(paste0("Output/withinhost.pdf"), width = 1.8, height = 1.2)
+param_sets <- expand.grid(r1 = 0.4, 
+                          r2 = 0.4 + c(0.02, 0.05, 0.1, 0.2), 
+                          K = 5000, alpha12 = 1, alpha21 = 0, mu = 0)
+plist3 = getplot(param_sets)
+pdf(paste0("Output/withinhost_competition.pdf"), width = 1.6, height = 1.2)
 print(plist1[[1]])
 print(plist1[[2]])
 print(plist2[[1]])
 print(plist2[[2]])
+print(plist3[[1]])
+print(plist3[[2]])
 dev.off()
 
 combined_results = withinhost_fun(param_sets)
 data_ratio = ratio_fun(combined_results)
-
-values = alpha(c(hue_pal()(3)[1], '#2A41AF', '#4D7AAF', '#619CAF', '#85BDAF'),0.7)
+v = '#2A41AF'
+values = c(alpha(v, 0.9), alpha(v, 0.6), 
+           alpha(v, 0.4), alpha(v, 0.2))
+# values = alpha(c(hue_pal()(3)[1], '#2A41AF', '#4D7AAF', '#619CAF', '#85BDAF'),0.7)
+values = c(hue_pal()(3)[1], values)
+# values = alpha(c(hue_pal()(3)[1], '#2A41AF', '#4D7AAF', '#619CAF', '#85BDAF'),0.7)
 p1 = ggplot(data_ratio, aes(x = time, y = ratio, color = factor(group))) +
   geom_line() +
   geom_point() +
@@ -169,6 +153,6 @@ p1 = ggplot(data_ratio, aes(x = time, y = ratio, color = factor(group))) +
 
 p1
 
-pdf(paste0("Output/withinhost_legend.pdf"), width = 1.8, height = 1.5)
+pdf(paste0("Output/withinhost_competition_legend.pdf"), width = 1.8, height = 1.5)
 print(p1)
 dev.off()

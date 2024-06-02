@@ -27,7 +27,7 @@ viral_model <- function(t, state, parameters) {
 withinhost_fun = function(param_sets){
   # Initial state and time sequence
   state <- c(V1 = 1, V2 = 0)
-  times <- seq(0, 72, by = 0.1)
+  times <- seq(0, 100, by = 1)
   
   # Run simulations for each parameter set
   results <- lapply(seq(nrow(param_sets)), function(i) {
@@ -54,16 +54,19 @@ ratio_fun = function(combined_results){
   return(data_ratio)
 }
 
-
+# values = c("#aa85a6", "#F8766D", "#619CFF") A+B, A, B
 getplot = function(combined_results){
 
   data_ratio = ratio_fun(combined_results)
   data_ratio$group = factor(data_ratio$group,
                             levels = as.character(format(mu_vec, digits = 2)))
   
-  values = alpha(c('#2A41AF', '#4D7AAF', '#619CAF'),0.7)
-  
-  
+  # values = alpha(c('#2A41AF', '#4D7AAF', '#619CAF'),0.7)
+  # v = "#aa85a6"
+  v = '#2A41AF'
+  values = c(alpha(v, 0.9), alpha(v, 0.6), 
+             alpha(v, 0.4), alpha(v, 0.2))
+# show_col(values)
   p = ggplot(data_ratio, 
              aes(x = time, y = ratio, 
                  color = factor(group))) +
@@ -79,27 +82,44 @@ getplot = function(combined_results){
                        minor_breaks = seq(0 , 1, 0.25),
                        n.breaks = 3)
 
-  p
   return(p)
 }
 
 Kbase = 100000
 mu = 2*10^(-6)
-mu_vec = c(mu/2, mu, mu*10^3)
-param_sets1 <- expand.grid(r1 = 0.4, r2 = 0.4, K = 100000, 
+mu_vec = c((mu/2)^2, mu/2, mu, mu*10^3)
+r = 0.2
+param_sets1 <- expand.grid(r1 = r, r2 = r, K = 100000, 
                           alpha12 = 0, alpha21 = 0, 
                           mu = mu_vec)
-param_sets2 <- expand.grid(r1 = 0.4, r2 = 0.4, K = 100000, 
+param_sets2 <- expand.grid(r1 = r, r2 = r, K = 100000, 
                           alpha12 = 0, alpha21 = 1, 
                           mu = mu_vec)
-param_sets3 <- expand.grid(r1 = 0.4, r2 = 0.4, K = 100000, 
+param_sets3 <- expand.grid(r1 = r, r2 = r, K = 100000, 
                           alpha12 = 1, alpha21 = 0, 
                           mu = mu_vec)
 param_list = list(param_sets1, param_sets2, param_sets3)
 
-results_list = list()
+results_list1 = list()
 for (i in 1:3) {
-  results_list[[i]] = withinhost_fun(param_list[[i]])
+  results_list1[[i]] = withinhost_fun(param_list[[i]])
+}
+
+r = 0.4
+param_sets1 <- expand.grid(r1 = r, r2 = r, K = 100000, 
+                           alpha12 = 0, alpha21 = 0, 
+                           mu = mu_vec)
+param_sets2 <- expand.grid(r1 = r, r2 = r, K = 100000, 
+                           alpha12 = 0, alpha21 = 1, 
+                           mu = mu_vec)
+param_sets3 <- expand.grid(r1 = r, r2 = r, K = 100000, 
+                           alpha12 = 1, alpha21 = 0, 
+                           mu = mu_vec)
+param_list = list(param_sets1, param_sets2, param_sets3)
+
+results_list2 = list()
+for (i in 1:3) {
+  results_list2[[i]] = withinhost_fun(param_list[[i]])
 }
 
 transform_data = function(combined_results){
@@ -115,13 +135,15 @@ transform_data = function(combined_results){
 getplot2 = function(combined_results){
   values = c(hue_pal()(3)[1], hue_pal()(3)[3])
   long_data = pivot_longer(combined_results, cols = c("V1", "V2"), names_to = "Strain", values_to = "Population")
-  long_data = long_data[long_data$mu == mu_vec[2],]
+  # long_data = long_data[long_data$mu == mu_vec[2],]
   long_data$Population = long_data$Population/max(long_data$Population)
-  
+  v = c("#F8766D", "#619CFF")
+  values = c(alpha(v,0.9), alpha(v,0.6),
+             alpha(v,0.4), alpha(v,0.2))
   p = ggplot() + 
     geom_line(data = long_data, 
-              aes(x = time, y = Population, 
-                  group = Strain, color = Strain)) +
+              aes(x = time, y = Population,
+                  group = interaction(Strain, mu), color = interaction(Strain, mu))) +
     theme_bw() + 
     scale_color_manual(values = values) +
     xlab('Time unit') + 
@@ -135,7 +157,18 @@ getplot2 = function(combined_results){
   return(p)
 }
 
-pdf(paste0("Output/withinhost_evolution.pdf"), width = 1.5, height = 1.2)
+pdf(paste0("Output/withinhost_evolution1.pdf"), width = 1.5, height = 1.2)
+results_list = results_list1
+getplot(results_list[[1]])
+getplot(results_list[[2]])
+getplot(results_list[[3]])
+getplot2(results_list[[1]])
+getplot2(results_list[[2]])
+getplot2(results_list[[3]])
+dev.off()
+
+pdf(paste0("Output/withinhost_evolution2.pdf"), width = 1.5, height = 1.2)
+results_list = results_list2
 getplot(results_list[[1]])
 getplot(results_list[[2]])
 getplot(results_list[[3]])
@@ -152,32 +185,35 @@ data_ratio = ratio_fun(results_list[[1]])
 data_ratio$group = factor(data_ratio$group,
                           levels = as.character(format(mu_vec, digits = 2)))
 
-values = alpha(c('#2A41AF', '#4D7AAF', '#619CAF'),0.7)
+getplot_legend = function(v){
+  values = c(alpha(v,0.9), alpha(v,0.6),
+             alpha(v,0.4), alpha(v,0.2))
+  p = ggplot(data_ratio, 
+             aes(x = time, y = ratio, 
+                 color = factor(group))) +
+    geom_line() +
+    geom_point() +
+    scale_color_manual(values = values,
+                       name = expression(mu),
+                       label = c('1e-12','1e-6','2e-6','2e-3')) +
+    labs(y = "", x = "Time unit") +
+    theme_bw() +
+    theme(legend.position = "right",
+          legend.key.size = unit(0.4,'cm'),
+          legend.key.width = unit(0.4,'cm'),
+          legend.key = element_blank(),
+          legend.background = element_blank(),
+          panel.background = element_blank())
+  
+  return(p)
+}
+v = c('#2A41AF', "#F8766D", "#619CFF")
+getplot_legend(v[3])
 
-
-p = ggplot(data_ratio, 
-           aes(x = time, y = ratio, 
-               color = factor(group))) +
-  geom_line() +
-  geom_point() +
-  scale_color_manual(values = values,
-                     name = expression(mu),
-                     label = c('1e-6','2e-6','2e-3')) +
-  labs(y = "", x = "Time unit", color = "r2 value") +
-  theme_bw() +
-  theme(legend.position = "right",
-        legend.key.size = unit(0.4,'cm'),
-        legend.key.width = unit(0.4,'cm'),
-        legend.key = element_blank(),
-        legend.background = element_blank(),
-        panel.background = element_blank()) +
-  scale_x_continuous(breaks = c(0,24,48,72)) +
-  scale_y_continuous(limits = c(0, 1),
-                     minor_breaks = seq(0 , 1, 0.25),
-                     n.breaks = 3)
-p
 pdf(paste0("Output/withinhost_evolution_legend.pdf"), 
     width = 3, height = 1.4)
-print(p)
+print(getplot_legend(v[1]))
+print(getplot_legend(v[2]))
+print(getplot_legend(v[3]))
 dev.off()
 # 2*10^(-6)
