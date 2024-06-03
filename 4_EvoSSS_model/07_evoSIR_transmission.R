@@ -103,6 +103,16 @@ for (i in 1:10) {
   long_data_combined = rbind(long_data_combined, y)
 }
 
+v = hue_pal()(3)[1]
+values1 = c(alpha(v, 0.9), alpha(v, 0.6), 
+            alpha(v, 0.4), alpha(v, 0.2))
+v = hue_pal()(3)[3]
+values2 = c(alpha(v, 0.9), alpha(v, 0.6), 
+            alpha(v, 0.4), alpha(v, 0.2))
+v = '#2A41AF'
+values = c(alpha(v, 0.9), alpha(v, 0.6), 
+           alpha(v, 0.4), alpha(v, 0.2))
+
 p = ggplot() +
   geom_point(data = long_data_combined,
             aes(x = time, y = Population_label,
@@ -133,18 +143,13 @@ p = ggplot() +
                      ))
 
 p
-pdf(paste0("Output/withinhost_transmission.pdf"), width = 2.8, height = 1.6)
+pdf(paste0("Output/withinhost_transmission.pdf"), width = 2.6, height = 1.6)
 print(p)
 dev.off()
 
 
 getplot = function(long_data){
-  v = hue_pal()(3)[1]
-  values1 = c(alpha(v, 0.9), alpha(v, 0.6), 
-             alpha(v, 0.4), alpha(v, 0.2))
-  v = hue_pal()(3)[3]
-  values2 = c(alpha(v, 0.9), alpha(v, 0.6), 
-              alpha(v, 0.4), alpha(v, 0.2))
+
 
   # Plotting
   p1 = ggplot(long_data, aes(x = time, y = Population_label)) +

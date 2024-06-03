@@ -116,8 +116,8 @@ getplot = function(df, p0){
   means <- df %>%
     group_by(time) %>%
     summarize(mean_p = mean(p, na.rm = T))
-  values = c('#98afc7','#82caff','#b8cbfb', 
-             '#737ca1')
+  values = c('#98afc7','#79baec','#0041c2', 
+             '#a37ca1')
   p = ggplot(df, aes(p, fill = time)) + 
     geom_density(alpha = 0.3, bw = 0.1) +
     geom_vline(data = means, aes(xintercept = mean_p, color = time), 
@@ -146,7 +146,7 @@ getplot = function(df, p0){
 }
 
 pdf(paste0("Output/withinhost_bottleneck.pdf"), 
-    width = 2.5, height = 1.2)
+    width = 2.3, height = 1.2)
 
 print(getplot(df1, 0.2))
 print(getplot(df2, 0.2))
