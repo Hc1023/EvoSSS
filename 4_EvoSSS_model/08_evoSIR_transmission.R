@@ -143,7 +143,7 @@ p = ggplot() +
                      ))
 
 p
-pdf(paste0("Output/withinhost_transmission.pdf"), width = 2.6, height = 1.6)
+pdf(paste0("Output/withinhost_transmission.pdf"), width = 2.4, height = 1.6)
 print(p)
 dev.off()
 
