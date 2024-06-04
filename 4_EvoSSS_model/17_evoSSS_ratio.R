@@ -108,51 +108,35 @@ for (i in 1:25) {
   dfplot_simu = rbind(dfplot_simu, dfplot_simu1)
 }
 
-df2 = dfplot_simu %>% group_by(x, color) %>% 
-  summarise(y = sum(y)) %>%
-  as.data.frame()
-df2$x = df2$x + as.Date('2019-12-31')
-values = c(hue_pal()(3)[1], hue_pal()(3)[3])
+dfp_all = data.frame()
+for (i in 0:5) {
+  x1 = dfplot_simu[dfplot_simu$group == paste0('A',i),]
+  x2 = dfplot_simu[dfplot_simu$group == paste0('B',i),]
+  dfp = data.frame(p1 = x1$y/(x1$y + x2$y), cycle = i, x = poolday*(i+1))
+  dfp_all = rbind(dfp_all, dfp)
+}
 
-date_vec = as.Date('2019-12-31')+1:700
-df = read.csv('../3_Epidemiological_analysis/Covid19CasesGISAID.csv')
-df$Var1 = as.Date(df$Var1)
-df = df[df$Var1 %in% date_vec,]
-dfobserve = data.frame(
-  x = rep(date_vec,2),
-  y = c(df[df$Mutations == 'Lineage A','Freq'], 
-        df[df$Mutations == 'Lineage B','Freq']),
-  group = c(rep('A', 700),rep('B', 700))
-)
-
-
-
-
-
-ggplot() +
-  geom_point(data = dfobserve, 
-             aes(x = x, y = y, 
-                 group = group, color = group),
-             size = 0.4, shape = 16) +
-  geom_line(data = df2, 
-            aes(x = x, y = y, 
-                group = color, color = color), linewidth = 1) +
-  scale_y_continuous(trans='log10', 
-                     breaks = c(1,10,100,1000,10000),
-                     labels = c(expression(10^0),expression(10^1),
-                                expression(10^2), expression(10^3),
-                                expression(10^4))) +
+library(ggdist)
+dfp_all$cycle = factor(dfp_all$cycle)
+dfp_all$x = dfp_all$x + as.Date('2019-12-31')
+p = ggplot(dfp_all, aes(x = x, y = p1)) +
+  stat_halfeye(aes(fill = cycle), color = 'black', alpha = 0.5,
+               adjust = 1, justification = -0.22,
+               .width = 0, width = 60,
+               point_colour = NA,
+               show.legend = 'none') +
+  geom_boxplot(aes(fill=cycle), color = 'black', alpha = 0.5,
+               linewidth = 0.12, 
+               width = 20, outlier.shape = NA) + 
+  ggsci::scale_color_nejm() +
+  ggsci::scale_fill_nejm(name = 'Cycle') +
   theme_bw() +
-  scale_color_manual(name="Variant",
-                     labels=c("A", "B"),
-                     values = alpha(values, 0.6)) +
-  scale_fill_manual(name="Variant",
-                    labels=c("A", "B"),
-                    values = alpha(values, 0.6)) +
-  scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="6 months"),
+  scale_x_date(breaks = seq(as.Date('2019-12-01'), as.Date('2022-11-01'), by="3 months"),
                minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-11-01'), by ='1 month'),
                date_labels = "%y-%b") +
-  xlab('') + ylab('Cases') + 
-  coord_cartesian(xlim = c(as.Date('2019-12-31'), as.Date('2021-10-31')),
-                  ylim = c(1,2*10^4)) +
-  theme(legend.position = 'none')
+  xlab('') + ylab(expression(p[A])) +
+  theme(legend.key.size = unit(0.25,'cm'))
+
+pdf(paste0("Output/evoSSS_ratio.pdf"), width = 3, height = 1.3)
+print(p)
+dev.off()

@@ -94,6 +94,7 @@ anno_arr = data.frame(x = as.Date(c('2020-8-10','2020-9-20','2020-10-29','2020-1
                       yend = c(0.02,0.04,0.06,0,0.02),
                       text = c('Beta', 'Alpha', 'Gamma', 'Delta', 'Omicron'))
 
+save(plot_data, file = 'growth_rate.rdata')
 # Plotting
 p = ggplot(plot_data, aes(x = date_vector, y = Fitted, group = Mutations)) +
   geom_line(aes(color = Mutations)) +

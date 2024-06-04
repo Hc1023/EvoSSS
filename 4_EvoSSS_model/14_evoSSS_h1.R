@@ -56,8 +56,7 @@ options(dplyr.summarise.inform=F)
 df2_list = list()
 for (n_simu in 1:100) {
   print(n_simu)
-  # pars = c(0.379, 0.398, 0.157)
-  pars = c(0.398, 0.398, 0.157)
+  pars = c(0.379, 0.398, 0.157)
   poolday = 30
   # The initial cycle - epidemic outbreak
   seed_vec = matrix(0,2,2)
@@ -119,7 +118,7 @@ for (n_simu in 1:100) {
     summarise(y = sum(y)) %>%
     as.data.frame()
   df2_list[[n_simu]] = df2$y
-  
+
 }
 
 simu_Onset = data.frame(bind_cols(df2_list))
@@ -140,6 +139,7 @@ plot_data <- data.frame(
 
 plot_data$x = plot_data$x + as.Date('2019-12-31')
 
+save(simu_Onset, plot_data, file = 'h1.rdata')
 values = c(hue_pal()(3)[1], hue_pal()(3)[3])
 
 date_vec = as.Date('2019-12-31')+1:700
@@ -159,16 +159,16 @@ p = ggplot() +
                  group = group, color = group),
              size = 0.4, shape = 16) +
   geom_ribbon(data = plot_data, 
-              aes(x = x, group = V, 
-                  ymin = LowerCI, ymax = UpperCI, fill = V)) +  # Confidence interval
+               aes(x = x, group = V, 
+                   ymin = LowerCI, ymax = UpperCI, fill = V)) +  # Confidence interval
   geom_line(data = plot_data, 
             aes(x = x, y = Fitted, 
                 group = V, color = V), linewidth = 1) +
-  scale_y_continuous(trans='log10', 
-                     breaks = c(1,10,100,1000,10000),
-                     labels = c(expression(10^0),expression(10^1),
-                                expression(10^2), expression(10^3),
-                                expression(10^4))) +
+   scale_y_continuous(trans='log10', 
+                      breaks = c(1,10,100,1000,10000),
+                      labels = c(expression(10^0),expression(10^1),
+                                 expression(10^2), expression(10^3),
+                                 expression(10^4))) +
   theme_bw() +
   scale_color_manual(name="Variant",
                      labels=c("A", "B"),
@@ -183,7 +183,7 @@ p = ggplot() +
   coord_cartesian(xlim = c(as.Date('2019-12-31'), as.Date('2021-10-31')),
                   ylim = c(1,2*10^4)) +
   theme(legend.position = 'none')
-p
-pdf(paste0("Output/evoSSS_h2.pdf"), width = 2.5, height = 1.8)
+
+pdf(paste0("Output/evoSSS_h1.pdf"), width = 2.5, height = 1.8)
 print(p)
 dev.off()

@@ -54,10 +54,9 @@ simu <- function(seed_mat_I1, seed_mat_I2, N, poolday, pars) {
 }
 options(dplyr.summarise.inform=F)
 df2_list = list()
-for (n_simu in 1:100) {
+for (n_simu in 1:500) {
   print(n_simu)
-  # pars = c(0.379, 0.398, 0.157)
-  pars = c(0.398, 0.398, 0.157)
+  pars = c(0.379, 0.398, 0.157)
   poolday = 30
   # The initial cycle - epidemic outbreak
   seed_vec = matrix(0,2,2)
@@ -183,7 +182,3 @@ p = ggplot() +
   coord_cartesian(xlim = c(as.Date('2019-12-31'), as.Date('2021-10-31')),
                   ylim = c(1,2*10^4)) +
   theme(legend.position = 'none')
-p
-pdf(paste0("Output/evoSSS_h2.pdf"), width = 2.5, height = 1.8)
-print(p)
-dev.off()
