@@ -96,7 +96,6 @@ if(F){
   
 }
 
-rm(list = ls())
 ddf = read.csv('map.csv')
 colnames(ddf)[2:5] = c('Lineage A', 'Lineage B', '8782T','28144C')
 ddf$radius <- log(apply(ddf[,2:5], 1, sum))/log(5) + 1
@@ -120,6 +119,7 @@ anns2 = data.frame(OCEAN = c("North\nPacific\nOcean",
 
 values = c(hue_pal()(3)[1], hue_pal()(3)[3], hue_pal()(3)[2], hue_pal()(4)[4])
 ddf$radius = ddf$radius*3
+
 world <- map_data('world')
 p <- ggplot(world, aes(long, lat)) +
   geom_map(map=world, aes(map_id=region), 
@@ -130,13 +130,11 @@ p <- ggplot(world, aes(long, lat)) +
             aes(x = ocean_long, y = ocean_lat, label = OCEAN)) +
   geom_scatterpie(data=ddf, 
                   aes(x=lon, y=lat, group=region, r=radius), 
-                  cols=c('Lineage A', 'Lineage B',
-                         '8782T', '28144C'), 
+                  cols=c('Lineage A', 'Lineage B'), 
                   color = alpha('black', 0.9), size = 0.1) + 
-  scale_fill_manual(name="Mutations",
+  scale_fill_manual(name="Variant",
                     values = alpha(values,.8),
-                    labels = c('Lineage A', 'Lineage B',
-                               'T/T', 'C/C')) +
+                    labels = c('A', 'B')) +
   coord_equal() + 
   geom_scatterpie_legend(ddf$radius, x=-160, y=-55, n=2, breaks = c(6,12),
                          labeller=function(x) 5^(x/3-1)) +
@@ -157,6 +155,45 @@ p <- ggplot(world, aes(long, lat)) +
             size = 4, alpha=.8,
             inherit.aes = FALSE)
 p
+
+p2 <- ggplot(world, aes(long, lat)) +
+  geom_map(map=world, aes(map_id=region), 
+           fill="#F7F6F4", color="#CCD2D3") +
+  geom_text(data = anns, color = "#777777", alpha=.8, size = 20,
+            aes(x = continent_long, y = continent_lat, label = CONTINENT)) +
+  geom_text(data = anns2, color = "#777777", fontface = 'italic', alpha=.5,
+            size = 20,
+            aes(x = ocean_long, y = ocean_lat, label = OCEAN)) +
+  geom_scatterpie(data=ddf, 
+                  aes(x=lon, y=lat, group=region, r=radius/3), 
+                  cols=c('Lineage A', 'Lineage B'), 
+                  color = alpha('black', 0.9), size = 0.001) + 
+  scale_fill_manual(name="Variant",
+                    values = alpha(values,.8),
+                    labels = c('A', 'B')) +
+  coord_equal() + 
+  geom_scatterpie_legend(ddf$radius/3, x=220, y=-55, n=2, breaks = c(2,4),
+                         labeller=function(x) 5^(x-1)) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_rect(fill = alpha("#CCD2D3", 0.5)),
+        panel.ontop = FALSE,
+        axis.title=element_text(size=16),
+        axis.text=element_text(size=14),
+        legend.title = element_text(size=16),
+        legend.text = element_text(size=14),
+        legend.position = 'top') +
+  xlab('Longitude') + ylab('Lattitude') +
+  geom_text(data = data.frame(x = 155,
+                              y = -85, 
+                              text = 'By March 1, 2020'), 
+            aes(x = x, y = y, label = text), 
+            size = 20, alpha=.8,
+            inherit.aes = FALSE)
+pdf(file = 'Output/map_small.pdf', width = 30,height = 20)
+print(p2)
+dev.off()
+
 # ocean #777777
 pdf(file = 'Output/map.pdf', height = 3.5)
 print(p)

@@ -16,7 +16,6 @@ bspline = function(df){
   gam_model <- gam(cases ~ s(time, bs = "ps"), 
                    family = poisson(link = "log"))
   
-  
   # Extracting model matrix
   X <- model.matrix(gam_model)
   
@@ -28,7 +27,6 @@ bspline = function(df){
     X = X,
     mu = gam_model$coefficients
   )
-  
   
   stan_code <- sprintf("
 data {
@@ -51,7 +49,7 @@ model {
   # Run the model
   # The default and preferred algorithm is "NUTS", which is the No-U-Turn sampler variant of Hamiltonian Monte Carlo (Hoffman and Gelman 2011, Betancourt 2017). 
   fit <- stan(model_code = stan_code, data = stan_data, 
-              iter = 10000, chains = 3, verbose = T,
+              iter = 10000, chains = 4, verbose = T,
               control = list(max_treedepth = 20))
   
   return(fit)

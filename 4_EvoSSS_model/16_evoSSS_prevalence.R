@@ -3,7 +3,6 @@ library(dplyr)
 library(ggplot2)
 library(scales)
 
-
 df = read.csv('../3_Epidemiological_analysis/Covid19CasesGISAID.csv')
 df$Var1 = as.Date(df$Var1)
 dfplot = df
@@ -40,12 +39,12 @@ dfsum2$Mutations = factor(dfsum2$Mutations,
 
 
 load('h1.rdata')
-simu_Onset
+# simu_Onset
 simu1 = as.matrix(simu_Onset[plot_data$V == 'A',])
 rownames(simu1) = 1:nrow(simu1)
 simu2 = as.matrix(simu_Onset[plot_data$V == 'B',])
 rownames(simu2) = 1:nrow(simu1)
-str(simu1)
+# str(simu1)
 
 df2 = plot_data[plot_data$V == 'A',]
 simup = simu1 / (simu1 + simu2)
@@ -62,22 +61,6 @@ df3$Fitted =  rowMeans(simup)
 df3$LowerCI =  ci_lower
 df3$UpperCI =  ci_upper
 df2 = rbind(df2,df3)
-ggplot() +
-geom_ribbon(data = df2, 
-            aes(x = x, group = V, 
-                ymin = LowerCI, ymax = UpperCI, fill = V)) +  # Confidence interval
-  geom_line(data = df2, 
-            aes(x = x, y = Fitted, 
-                group = V, color = V), linewidth = 1) +
-  scale_y_continuous(trans='log10',
-                     breaks = c(1e-6,1e-5,1e-4,1e-3,1e-2,1e-1,1),
-                     labels = c('1e-4','1e-3','1e-2','1e-1','1','10','100')) +
-  annotation_logticks(linewidth = 0.1) +
-  coord_cartesian(xlim = c(as.Date('2019-12-31'), as.Date('2021-10-31')),
-                  ylim = c(1e-5,1)) +
-  theme(legend.position = 'none',
-        plot.margin = margin(0.5,1,0,0.5, "cm") # trbl
-  ) 
 
 dfsum2 = dfsum2[dfsum2$Mutations %in% c('Lineage A', 'Lineage B'),]
 dfsum2$V  = 'A'
@@ -103,7 +86,7 @@ p = ggplot() +
   geom_line(data = df2, 
             aes(x = x, y = Fitted, 
                 group = V, color = V), linewidth = 1) +
-  xlab('') + ylab('Prevalence (%)') + theme_bw() +
+  xlab('') + ylab('p (%)') + theme_bw() +
   scale_color_manual(values = alpha(values, 0.6)) +
   scale_fill_manual(values = alpha(values, 0.6)) +
   scale_y_continuous(trans='log10',
@@ -116,7 +99,7 @@ p = ggplot() +
         plot.margin = margin(0.5,1,0,0.5, "cm") # trbl
   ) 
 p
-pdf("Output/prevalence.pdf", width = 3, height = 1.2)
+pdf("Output/evoSSS_prevalence.pdf", width = 2.8, height = 1.3)
 print(p)
 dev.off()
 

@@ -7,6 +7,7 @@ library(scales)
 library(ggnewscale)
 library(tidyverse)
 library(dplyr)
+library(ggdist)
 
 load('evoSSS_chain.rdata')
 
@@ -116,7 +117,7 @@ for (i in 0:5) {
   dfp_all = rbind(dfp_all, dfp)
 }
 
-library(ggdist)
+
 dfp_all$cycle = factor(dfp_all$cycle)
 dfp_all$x = dfp_all$x + as.Date('2019-12-31')
 p = ggplot(dfp_all, aes(x = x, y = p1)) +
@@ -135,8 +136,9 @@ p = ggplot(dfp_all, aes(x = x, y = p1)) +
                minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-11-01'), by ='1 month'),
                date_labels = "%y-%b") +
   xlab('') + ylab(expression(p[A])) +
-  theme(legend.key.size = unit(0.25,'cm'))
-
-pdf(paste0("Output/evoSSS_ratio.pdf"), width = 3, height = 1.3)
+  theme(legend.key.size = unit(0.25,'cm')) +
+  guides(fill=guide_legend(ncol=2))
+p
+pdf(paste0("Output/evoSSS_ratio.pdf"), width = 3, height = 1.2)
 print(p)
 dev.off()
