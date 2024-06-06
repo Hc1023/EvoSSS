@@ -18,14 +18,10 @@ nextclade <- read.table(file = 'nextclade_qc.tsv',
 nextclade <- nextclade[nextclade$seqName %in% Ttree$tip.label, c(1,2,3,16)]
 
 for (i in 1:nrow(nextclade)) {
-  if(any(grep('C8782T', nextclade[i,4])) & any(grep('T28144C', nextclade[i,4]))){
-    nextclade[i,5] <- 'Lineage A'
-  }else if(any(grep('C8782T', nextclade[i,4]))){
-    nextclade[i,5] <- '8782T'
-  }else if(any(grep('T28144C', nextclade[i,4]))){
-    nextclade[i,5] <- '28144C'
+  if(any(grep('C8782T', nextclade[i,4])) | any(grep('T28144C', nextclade[i,4]))){
+    nextclade[i,5] <- 'A'
   }else{
-    nextclade[i,5] <- 'Lineage B'
+    nextclade[i,5] <- 'B'
   }
 }
 
@@ -34,14 +30,12 @@ for (i in 1:nrow(nextclade)) {
 # 28144C  8782T Lineage A Lineage B 
 # 75       237       578       948 
 
-cls <- list(Clade_1=nextclade$seqName[nextclade$V5 == 'Lineage A'],
-            Clade_2=nextclade$seqName[nextclade$V5 == 'Lineage B'],
-            Clade_3=nextclade$seqName[nextclade$V5 == '8782T'],
-            Clade_4=nextclade$seqName[nextclade$V5 == '28144C'])
+cls <- list(Clade_1=nextclade$seqName[nextclade$V5 == 'A'],
+            Clade_2=nextclade$seqName[nextclade$V5 == 'B'])
 
 Ttree <- groupOTU(Ttree, cls)
 
-values = c(hue_pal()(3)[1], hue_pal()(3)[3], hue_pal()(3)[2], hue_pal()(4)[4])
+values = c(hue_pal()(3)[1], hue_pal()(3)[3])
 
 load('pango_A.Rdata')
 values2 = values2[names(values2) %in% unique(sample_dat$lineage)]
@@ -76,26 +70,31 @@ p <- ggtree(Ttree, #mrsd = maxdate,
   collapse(node=2306) %<+%
   sample_dat + #theme_tree2() +
   scale_color_manual(name="Clades",
-                     labels=c("Lineage A", "Lineage B", 
-                              '8782 C>T', "28144 T>C"),
-                     values = values) +
+                     labels=c("Lineage A", "Lineage B"),
+                     values = values,
+                     guide = 'none') +
   geom_polygon(data = data.frame(x=c(0.028, 0.2, 0.2), y= c(611, 591, 631)),
                aes(x, y), fill = values2[1], color = 'black',
                inherit.aes = F) +
   new_scale_color() + 
   new_scale_fill() +
   geom_tippoint(mapping = aes(fill = lineage), size = 3, shape=21) +
-  scale_fill_manual(name="Pangolin lineage",
+  scale_fill_manual(name="Pangolin",
                     values=alpha(values2, alpha = 0.9)) + 
-  guides(fill = guide_legend(override.aes = list(size=4))) +
-  guides(shape = guide_legend(order = 2), fill = guide_legend(order = 1)) +
+  # guides(shape = guide_legend(order = 2), fill = guide_legend(order = 1)) +
   theme(axis.title=element_text(size=12),
         axis.text=element_text(size=10),
-        legend.key.size = unit(0.42, 'cm'),
-        legend.title = element_text(size=14),
-        legend.text = element_text(size=12)
+        legend.key.size = unit(0.3, 'cm'),
+        legend.spacing = unit(0.001, 'cm'),
+        legend.position = c(0.7,0.5),
+        # legend.title = element_text(size=14),
+        # legend.text = element_text(size=12),
+        legend.background = element_blank(),
+        legend.box.background = element_blank(),
+        legend.key = element_blank()
   ) +
-  guides(fill = guide_legend(override.aes = list(size=2))) +
+  guides(fill = guide_legend(override.aes = list(size=2),
+                             ncol = 4)) +
   coord_cartesian(ylim = c(-5, 650)) +
   geom_text(data = data.frame(x = c(0.16,
                                     0.015,0.07,0.14,
@@ -118,12 +117,12 @@ p <- ggtree(Ttree, #mrsd = maxdate,
             aes(x = x, y = y, label = text), 
             size = 3.8, alpha=.8, fontface='bold',
             inherit.aes = FALSE) +
-  scale_x_continuous()
+  scale_x_continuous() 
 
 p
 
 
-pdf(file = 'Output/tree_A.pdf', width = 7, height = 4)
+pdf(file = 'Output/tree_A.pdf', width = 4.2, height = 4)
 print(p)
 dev.off()
 
