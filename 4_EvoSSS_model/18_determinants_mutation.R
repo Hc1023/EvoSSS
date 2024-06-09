@@ -168,16 +168,16 @@ p = ggplot() +
   scale_fill_manual(values = alpha(values2, 0.2)) +
   theme_minimal() +
   theme(legend.position = "right",
-        plot.title = element_text(hjust = 0.5)) +
-  scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="6 months"),
-               minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-11-01'), by ='1 month'),
-               date_labels = "%y-%b") +
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.major = element_blank(),  # Remove major grid lines
+        panel.grid.minor = element_blank(),  # Remove minor grid lines
+        axis.ticks = element_blank()) +
   scale_y_continuous(breaks = c(0,0.5,1),
                      labels = c('0.0','0.5','1.0')) +
   coord_cartesian(xlim = c(as.Date('2020-01-31'), as.Date('2021-10-31')),
                   ylim = c(0.04,0.96)) +
   xlab('') + ylab('') 
-
+p
 pdf(paste0("Output/demerminants_tranmissibility.pdf"), width = 2.5, height = 1.2)
 print(p)
 dev.off()
@@ -227,10 +227,9 @@ p = ggplot() +
   scale_fill_manual(values = alpha(values2, 0.2)) +
   theme_minimal() +
   theme(legend.position = "right",
-        plot.title = element_text(hjust = 0.5)) +
-  scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="6 months"),
-               minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-11-01'), by ='1 month'),
-               date_labels = "%y-%b") +
+        panel.grid.major = element_blank(),  # Remove major grid lines
+        panel.grid.minor = element_blank(),  # Remove minor grid lines
+        axis.ticks = element_blank()) +
   scale_y_continuous(breaks = c(0,0.5,1),
                      labels = c('0.0','0.5','1.0')) +
   coord_cartesian(xlim = c(as.Date('2020-01-31'), as.Date('2021-10-31')),

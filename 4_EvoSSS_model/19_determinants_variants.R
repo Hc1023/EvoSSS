@@ -6,7 +6,6 @@ library(ggnewscale)
 library(tidyverse)
 library(dplyr)
 
-
 update_fun <- function(pars, states_old, N, n) {
   S <- states_old[,1]
   I <- states_old[,2:(n+1)]
@@ -20,6 +19,7 @@ update_fun <- function(pars, states_old, N, n) {
   mu[1] = mu1
   betas <- beta1 * eta^(0:(n-1)) # use convergent seq
   
+  
   S_new <- S
   for (i in 1:n) {
     S_new <- S_new - betas[i] * S * I[,i] / N
@@ -28,7 +28,7 @@ update_fun <- function(pars, states_old, N, n) {
   I_new <- matrix(0, nrow(states_old), n)
   I_new[,1] <- I[,1] + betas[1] * S * I[,1] / N - gamma * I[,1] - mu[1] * I[,1]
   for (i in 2:n) {
-    if(sum(I_new[,i]) > 0.5*sum(rowSums(I_new))){
+    if(sum(I[,i]) > 0.5*sum(rowSums(I[,1:i]))){
       mu[i] = mu1
     }
     I_new[,i] <- I[,i] + betas[i] * S * I[,i] / N - gamma * I[,i] + mu[i-1] * I[,i-1] - mu[i] * I[,i]
@@ -36,6 +36,7 @@ update_fun <- function(pars, states_old, N, n) {
   
   Onset_new <- matrix(0, nrow(states_old), n)
   Onset_new[,1] <- betas[1] * S * I_new[,1] / N
+  
   for (i in 2:n) {
     Onset_new[,i] <- betas[i] * S * I_new[,i] / N + mu[i-1] * I_new[,i-1]
   }
@@ -73,18 +74,20 @@ simu <- function(seed_mats, N, poolday, pars, n) {
   return(Onsets_mat)
 }
 
-
-
 determinant_fun = function(pars){
   
   poolday = 30
   # The initial cycle - epidemic outbreak
-  variants_num = 2
-  seed_vec = matrix(0,variants_num,2)
-  seed_vec[,1] = round(34*c(1,0))
-  seed_mat_I1 = diag(seed_vec[1,])
-  seed_mat_I2 = diag(seed_vec[2,])
-  seed_mats <- list(seed_mat_I1,seed_mat_I2)
+  n=3
+
+  seed_vec = c(34,0)
+  probs <- c(1,rep(0,n-1))
+  
+  seed_matrix <- matrix(0, nrow=n, ncol=length(seed_vec))
+  for (i in 1:n) {
+    seed_matrix[i,] <- seed_vec * probs[[i]]
+  }
+  seed_mats <- list()
   for (i in 1:n) {
     seed_mats[[i]] <- diag(seed_matrix[i,])
   }
@@ -94,7 +97,7 @@ determinant_fun = function(pars){
   c = 1.05
   mu = 1e-1
   pars = c(b, c, 0.157,mu)
-  Onsets_mat = simu(seed_mats, N, poolday, pars, n=2)
+  Onsets_mat = simu(seed_mats, N, poolday, pars, n=3)
   Onsets_mat_list[[1]] = Onsets_mat
   
   
@@ -134,28 +137,35 @@ determinant_fun = function(pars){
   dfplot_simu = data.frame()
   for (i in 1:25) {
     Onsets_mat = Onsets_mat_list[[i]]
-    n = i-1
+    k = i-1
     
-    dfplot_simu1 = data.frame(x = rep(1:nrow(Onsets_mat)+poolday*n,2),
-                              y = c(Onsets_mat[,1],Onsets_mat[,2]),
-                              group = rep(paste0(c('A','B'),n), 
+    dfplot_simu1 = data.frame(x = rep(1:nrow(Onsets_mat)+poolday*k,n),
+                              y = as.vector(Onsets_mat),
+                              group = rep(paste0(1:n,'_',k), 
                                           each = nrow(Onsets_mat)),
-                              color = rep(c('A','B'), 
+                              color = rep(1:n, 
                                           each = nrow(Onsets_mat)))
     dfplot_simu = rbind(dfplot_simu, dfplot_simu1)
   }
-  
+  str(dfplot_simu)
+
   df2 = dfplot_simu %>% group_by(x, color) %>% 
     summarise(y = sum(y)) %>%
     as.data.frame()
-  df2$x = df2$x #+ as.Date('2019-12-31')
-  values = c(hue_pal()(3)[1], hue_pal()(3)[3])
-  
+  str(df2)
+
   # Normalizing proportions for each date
   data <- df2 %>%
     group_by(x) %>%
-    mutate(p = y/sum(y))
+    mutate(p = y/sum(y)) %>%
+    as.data.frame()
   
+  str(data)
+  
+  ggplot() +
+    geom_area(data = data[data$x <400, ], 
+              aes(x = x, y = p, fill = factor(color)),
+              position = 'fill')
   return(data)
 }
 b = 0.4
@@ -176,11 +186,6 @@ pars = c(b, c, 0.157,1e-6)
 data4 = determinant_fun(pars)
 
 
-
-data$x = data$x + as.Date('2019-12-31')
-data2$x = data2$x + as.Date('2019-12-31')
-data3$x = data3$x + as.Date('2019-12-31')
-data4$x = data4$x + as.Date('2019-12-31')
 dfdata = rbind(cbind(data[data$color == 'B',],group = '1'),
                cbind(data2[data$color == 'B',],group = '2'),
                cbind(data3[data$color == 'B',],group = '3'),
