@@ -6,19 +6,22 @@ library(ggnewscale)
 library(tidyverse)
 library(dplyr)
 
+load('evoSSS_chain.rdata')
+
+
 update_fun <- function(pars, states_old, N, n) {
   S <- states_old[,1]
   I <- states_old[,2:(n+1)]
   Onset <- states_old[,(n+2):(2*n+1)]
   
-  beta1 = pars[1]
-  eta = pars[2] # 1.05
-  gamma = pars[3]
-  mu1 = pars[4] # 1e-6
-  mu = rep(0, n)
-  mu[1] = mu1
-  betas <- beta1 * eta^(0:(n-1)) # use convergent seq
   
+  betas = pars
+
+  gamma = 0.157
+  mu1 = 0.01
+  mu = rep(mu1, n)
+  
+  # mu[1] = mu1
   
   S_new <- S
   for (i in 1:n) {
@@ -28,17 +31,14 @@ update_fun <- function(pars, states_old, N, n) {
   I_new <- matrix(0, nrow(states_old), n)
   I_new[,1] <- I[,1] + betas[1] * S * I[,1] / N - gamma * I[,1] - mu[1] * I[,1]
   for (i in 2:n) {
-    if(sum(I[,i]) > 0.5*sum(rowSums(I[,1:i]))){
-      mu[i] = mu1
-    }
     I_new[,i] <- I[,i] + betas[i] * S * I[,i] / N - gamma * I[,i] + mu[i-1] * I[,i-1] - mu[i] * I[,i]
   }
   
   Onset_new <- matrix(0, nrow(states_old), n)
-  Onset_new[,1] <- betas[1] * S * I_new[,1] / N
+  Onset_new[,1] <- betas[1] * S * I_new[,1] / N - mu[1] * I[,1]
   
   for (i in 2:n) {
-    Onset_new[,i] <- betas[i] * S * I_new[,i] / N + mu[i-1] * I_new[,i-1]
+    Onset_new[,i] <- betas[i] * S * I_new[,i] / N + mu[i-1] * I[,i-1] - mu[i] * I[,i]
   }
   
   mat <- cbind(S_new, I_new, Onset_new)
@@ -62,6 +62,7 @@ simu <- function(seed_mats, N, poolday, pars, n) {
   Onsets_mat <- matrix(0, ndays, n)
 
   for (t in 2:ndays) {
+
     states_old <- update_fun(pars = pars, states_old = states_old, N = N, n = n)
     if (t <= nrow(seed_mats[[1]])) {
       for (i in 1:n) {
@@ -78,7 +79,7 @@ determinant_fun = function(pars){
   
   poolday = 30
   # The initial cycle - epidemic outbreak
-  n=3
+  n= length(pars)
 
   seed_vec = c(34,0)
   probs <- c(1,rep(0,n-1))
@@ -95,18 +96,18 @@ determinant_fun = function(pars){
   Onsets_mat_list = list()
   b = 0.4
   c = 1.05
-  mu = 1e-1
-  pars = c(b, c, 0.157,mu)
-  Onsets_mat = simu(seed_mats, N, poolday, pars, n=3)
+  mu = 0.01
+
+  Onsets_mat = simu(seed_mats, N, poolday, pars, n)
   Onsets_mat_list[[1]] = Onsets_mat
-  
   
   for (j in 1:24) {
     Onsets_mat <- Onsets_mat_list[[j]]
+
     # Generalized extraction of Onset columns for all variants
     Onsets <- list()
     for (i in 1:n) {
-      Onsets[[i]] <- Onsets_mat[poolday + 1:poolday, i]
+      Onsets[[i]] <- Onsets_mat[poolday + 1:poolday, i] + 1
     }
     
     # Mobility control force
@@ -129,7 +130,14 @@ determinant_fun = function(pars){
       seed_mats[[i]] <- diag(seed_matrix[i,])
     }
     
-    N = seed_vec/34 * rep(32583, 30)+1
+    fit = fitlist[[j]]
+    posterior = rstan::extract(fit)
+    contact = mean(posterior$contact)
+    N  = contact*seed_vec
+    print(contact)
+
+    # N = seed_vec/34 * rep(32583, 30)+1
+
     Onsets_mat = simu(seed_mats, N, poolday, pars, n)
     Onsets_mat_list[[j+1]] = Onsets_mat
   }
@@ -161,13 +169,29 @@ determinant_fun = function(pars){
     as.data.frame()
   
   str(data)
-  
-  ggplot() +
-    geom_area(data = data[data$x <400, ], 
-              aes(x = x, y = p, fill = factor(color)),
-              position = 'fill')
+  levels = unique(data$color)
+  levels[1:2] = c(2,1)
+  data$color = factor(data$color,levels = levels)
+
   return(data)
 }
+pars = c(0.4,0.2,0.41,0.2,0.42)
+data = determinant_fun(pars)
+ggplot() +
+  geom_area(data = data, 
+            aes(x = x, y = p, fill = color),
+            position = 'fill')
+dfall = data %>% group_by(x) %>% summarise(yall = sum(y))
+ggplot() +
+  geom_line(data = data, aes(x = x, y = y/28, group = color, color= color)) +
+  geom_line(data = dfall, aes(x = x, y = yall/28)) +
+  scale_y_continuous(trans='log10') +
+  coord_cartesian(ylim = c(2,max(data$y)/28)) +
+  labs(x = "Date", y = "Proportion") +
+  theme_minimal() +
+  theme(legend.position = "right",
+        plot.title = element_text(hjust = 0.5))
+
 b = 0.4
 c = 1
 pars = c(b, c, 0.157,1e-6)
