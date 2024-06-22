@@ -88,6 +88,7 @@ seed_mat_I1 = diag(seed_vec[1,])
 seed_mat_I2 = diag(seed_vec[2,])
 seed_mat_I3 = diag(seed_vec[3,])
 N = rep(32583, 2)
+
 Onsets_mat_list = list()
 Onsets_mat = simu(seed_mat_I1, seed_mat_I2, seed_mat_I3, N, poolday, pars)
 Onsets_mat_list[[1]] = Onsets_mat
@@ -165,6 +166,7 @@ ggplot(data, aes(x = x, y = y, fill = color)) +
 
 data2 = df2
 data2[data2$color == 'A','y'] = df2[df2$color == 'A','y']*100
+
 data2 <- data2 %>%
   group_by(x) %>%
   mutate(p = y/sum(y))

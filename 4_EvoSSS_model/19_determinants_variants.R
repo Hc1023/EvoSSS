@@ -175,7 +175,7 @@ determinant_fun = function(pars){
 
   return(data)
 }
-pars = c(0.4,0.2,0.41,0.2,0.42)
+pars = c(0.4,0.2,0.41)
 data = determinant_fun(pars)
 ggplot() +
   geom_area(data = data, 

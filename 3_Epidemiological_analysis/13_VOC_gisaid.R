@@ -43,6 +43,8 @@ for (i in 1:length(VOC)) {
 
 df2 = df[df$x <= as.Date('2021-10-31'),]
 df2$V = factor(df2$V, levels = VOC)
+
+brews = brewer.pal(n=4,name = "Spectral")
 values = c(brews[2:4], hue_pal()(3)[c(3,1)])
 
 p = ggplot() +
