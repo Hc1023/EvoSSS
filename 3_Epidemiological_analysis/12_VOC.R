@@ -33,7 +33,8 @@ if(F){
   result = result[!is.na(result$V),]
   result$V[result$V == '20A'] = 'D614G'
   result = result[,-2]
-  
+  result = result %>% group_by(date, V) %>%
+    summarise(y = sum(count))
   write.csv(result, 'VOC.csv', row.names = F)
 }
 
