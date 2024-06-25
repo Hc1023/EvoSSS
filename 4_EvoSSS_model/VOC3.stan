@@ -100,10 +100,10 @@ model {
   }
 
   // Priors
-  contact ~ normal(200, 100);
-  beta1 ~ normal(0.3, 0.1);
-  beta2 ~ normal(0.3, 0.1);
-  beta3 ~ normal(0.3, 0.1);
+  contact ~ normal(200, 10);
+  beta1 ~ normal(0.3, 0.01);
+  beta2 ~ normal(0.3, 0.01);
+  beta3 ~ normal(0.3, 0.01);
 
 }
 
