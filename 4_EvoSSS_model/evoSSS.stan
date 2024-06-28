@@ -64,19 +64,29 @@ data {
   // expected_matrix : observed_matrix - last onsets 
   int expected_matrix[nday, 2]; 
   vector[3] pars;
-  matrix[poolday, poolday] seed_mat_I1;
-  matrix[poolday, poolday] seed_mat_I2;
-  vector[poolday] seed_vec;
+  vector[poolday] Onset1;
+  vector[poolday] Onset2;
 }
 
 parameters {
   real<lower = 1> contact; // potential susceptible contacts
+  real<lower = 0, upper = 0.1> mobility;
 }
 
 
 model {
   vector[poolday] N;
   matrix[nday, 2] simu_mat;
+  matrix[poolday, poolday] Mobility_matrix;
+  matrix[poolday, poolday] seed_mat_I1;
+  matrix[poolday, poolday] seed_mat_I2;
+  vector[poolday] seed_vec;
+
+  Mobility_matrix = diag_matrix(rep_vector(mobility, poolday));
+
+  seed_mat_I1 = diag_matrix(Mobility_matrix * Onset1);
+  seed_mat_I2 = diag_matrix(Mobility_matrix * Onset2);
+  seed_vec = Mobility_matrix * (Onset1 + Onset2);
 
   N = seed_vec * contact + 1; // >=1
   simu_mat = simu(seed_mat_I1, seed_mat_I2, N, poolday, pars, nday); 
@@ -89,6 +99,7 @@ model {
 
   // Priors
   contact ~ normal(100, 10);
+  mobility ~ normal(0.01, 0.01);
 }
 
 
