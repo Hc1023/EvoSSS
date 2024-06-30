@@ -36,6 +36,14 @@ observed_matrix = data.frame(v1 = merged_df[merged_df$V == 'A', 'count'],
                              v2 = merged_df[merged_df$V == 'B', 'count'])
 rownames(observed_matrix) = full_dates
 
+fexpect0 = data.frame(y = c(observed_matrix$v1,observed_matrix$v2,
+                            observed_matrix$v3),
+                      x = rep(1:nrow(observed_matrix),2),
+                      group = rep(c('A','B'), 
+                                  each = nrow(observed_matrix)))
+fexpect0$date = as.Date('2019-12-31') + fexpect0$x
+fexpect0$group = factor(fexpect0$group, levels = c('A','B'))
+
 update_fun = function(pars, states_old, N){
   
   S <- states_old[,1]
@@ -124,7 +132,7 @@ ggplot() +
 
 fitlist = list()
 
-determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
+determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1, require_dfplot_simu = F){
 
   n = 2
   poolday = 30
@@ -254,11 +262,127 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
   
   data$color = factor(data$color, levels = levels)
   
+  if(require_dfplot_simu){
+    return(dfplot_simu)
+  }
   return(data)
 }
 save(fitlist, file = 'AB_constant_beta.rdata')
 
 load('AB_constant_beta.rdata')
+
+dfplot_simu = determinant_fun(cond = F, ifsimu  = T, n_simu = n_simu, require_dfplot_simu = T)
+dfplot_simu$date = as.Date('2019-12-31') + dfplot_simu$x
+dfplot_simu$group2 = 'A'
+dfplot_simu$group2[dfplot_simu$color == '2'] = 'B'
+df2 = dfplot_simu %>% group_by(x, color) %>% 
+  summarise(y = sum(y)) %>%
+  as.data.frame()
+# Normalizing proportions for each date
+data <- df2 %>%
+  group_by(x) %>%
+  mutate(p = y/sum(y)) %>%
+  as.data.frame()
+data$date = as.Date('2019-12-31') + data$x
+data$group = 'A'
+data$group[data$color == '2'] = 'B'
+data$group = factor(data$group, levels = c('A','B'))
+values = c(hue_pal()(3)[1], hue_pal()(3)[3])
+data = data[data$x>1,]
+
+parsmat = data.frame()
+for (i in 2:length(fitlist)) {
+  posterior = rstan::extract(fitlist[[i]])
+  parsmat = rbind(parsmat, 
+                  data.frame(Tcycle = i,
+                             y = c(posterior$contact, 
+                                   posterior$mobility),
+                             group = c(rep('capacity', length(posterior$contact)),
+                                       rep('mobility', length(posterior$mobility)))
+                             
+                  ))
+  
+}
+
+poolday = 30
+parsmat$date = poolday*(parsmat$Tcycle-1) + as.Date('2019-12-31') + 1
+df0 = parsmat %>% group_by(date, group) %>%
+  summarise(y = mean(y))
+df = df0[df0$group == 'capacity',c(1,3)]
+colnames(df)[2] = 'capacity'
+df$mobility = df0$y[df0$group == 'mobility']
+df$y1 =  df$capacity * df$mobility
+
+df$y1_log = log(df$y1)
+df$y2_log = log(df$y2)
+
+df$y1_transform = 100*df$y1
+library(ggnewscale)
+load('../3_Epidemiological_analysis/growth_rate.rdata')
+df2 = plot_data[plot_data$Mutations == 'Lineage B',]
+df2 = na.omit(df2)
+df$gr = NA
+for (i in 1:nrow(df)) {
+  df$gr[i] = mean(df2$Fitted[df2$date_vector < df$date[i] + 30 & df2$date_vector >= df$date[i]])
+}
+df = na.omit(df)
+# df$size = exp(df$gr)
+df$gr2 = sprintf('%.2f', df$gr+0.002)
+
+p = ggplot() +
+  geom_point(data = fexpect0, 
+             aes(x = date, y = y/28, 
+                 group = group, color = group),
+             size = 0.4, shape = 16) +
+  geom_line(data = data, 
+            aes(x = date, y = y/28, group = group, color= group),
+            linewidth = 1) +
+  geom_line(data = dfplot_simu, 
+            aes(x = date, y = y/28, group = group, color= group2),
+            linewidth = 0.5, alpha = 0.2) +
+  scale_color_manual(name="",
+                     values = alpha(values, 0.7)) +
+  scale_fill_manual(name="",
+                    values = alpha(values, 0.3)) +
+  new_scale_color() + 
+  new_scale_fill() +
+  geom_line(data = df, 
+            aes(x = date, y = y1_transform),
+            color = alpha('darkblue', 0.7)) +
+  geom_point(data = df, 
+             aes(x = date, y = y1_transform, size = gr2, fill = gr2),
+             shape = 21) +
+  scale_fill_manual(values = alpha(colorRampPalette(c("black", "white"))(6), 0.9)) +
+  scale_y_continuous(trans='log10',
+                     breaks = c(1,10,100,1000,10000),
+                     labels = c(expression(10^0),expression(10^1),
+                                expression(10^2), expression(10^3),
+                                expression(10^4)),
+                     sec.axis = sec_axis(
+                       transform = ~ ./100, 
+                       name = 'Capacity*Mobility',
+                       # color = alpha('darkblue', 0.7),
+                       breaks = c(0.01,0.1,1,10,100),
+                       labels = c(expression(10^-2),expression(10^-1),
+                                  expression(10^0),expression(10^1),
+                                  expression(10^2)))
+                    ) +
+  coord_cartesian(ylim = c(2,max(data$y))) +
+  labs(x = "Date", y = "Proportion") +
+  theme_bw() +
+  theme(legend.position = "right",
+        plot.title = element_text(hjust = 0.5)) +
+  scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="6 months"),
+               minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-11-01'), by ='1 month'),
+               date_labels = "%y-%b") +
+  xlab('') + ylab('Cases') + 
+  coord_cartesian(xlim = c(as.Date('2020-01-01'), as.Date('2021-10-31')),
+                  ylim = c(1,2*10^4))
+
+p
+
+
+
 
 df2_list = list()
 for (n_simu in 1:100) {
@@ -283,14 +407,6 @@ plot_data$group[plot_data$V == '2'] = 'B'
 plot_data$group = factor(plot_data$group, levels = c('A','B'))
 save(simu_Onset, plot_data, file = 'AB_constant_plot.rdata')
 load('AB_constant_plot.rdata')
-
-fexpect0 = data.frame(y = c(observed_matrix$v1,observed_matrix$v2),
-                      x = rep(1:nrow(observed_matrix),2),
-                      group = rep(c('A', 'B'), 
-                                  each = nrow(observed_matrix)))
-fexpect0$date = as.Date('2019-12-31') + fexpect0$x
-fexpect0$group = factor(fexpect0$group, levels = c('A','B'))
-
 
 library(RColorBrewer)
 values = c(hue_pal()(3)[1], hue_pal()(3)[3])
@@ -333,29 +449,14 @@ p = ggplot() +
         legend.key = element_blank(),
         legend.key.size = unit(0.2, units = 'cm'))
 
-pdf(paste0("Output/AB_constant_plot.pdf"), width = 2.5, height = 1.8)
+pdf(paste0("Output/evoSSS_stan_plot.pdf"), width = 2.5, height = 1.8)
 print(p)
 dev.off()
 
-parsmat = data.frame()
-for (i in 2:length(fitlist)) {
-  posterior = rstan::extract(fitlist[[i]])
-  parsmat = rbind(parsmat, 
-                  data.frame(Tcycle = i,
-                             y = c(posterior$contact, 
-                                   posterior$mobility),
-                             group = c(rep('capacity', length(posterior$contact)),
-                                       rep('mobility', length(posterior$mobility)))
-                             
-                  ))
-  
-}
+data = determinant_fun(cond = F, ifsimu  = T, n_simu = n_simu)
 
-poolday = 30
-parsmat$date = poolday*(parsmat$Tcycle-1) + as.Date('2019-12-31') + 1
-df = parsmat[parsmat$group == 'capacity', ]
-df = parsmat[parsmat$group == 'mobility', ]
-df$y =  parsmat[parsmat$group == 'capacity', 'y']/parsmat[parsmat$group == 'mobility', 'y']
+
+
 df$date = as.Date(df$date)
 pd = 8
 
@@ -364,7 +465,7 @@ medians <- df %>%
   summarize(median_y = median(y))
 p3 = ggplot() +
   geom_boxplot(data = df, 
-               aes(x = date-pd, y = y, group = date),
+               aes(x = date-pd, y = log(y), group = date),
                color = alpha(values[1],0.7), 
                fill = alpha(values[1],0.3),
                width = 6,
@@ -374,12 +475,12 @@ p3 = ggplot() +
                date_labels = "%y-%b",
                expand = c(0, 0)) +
   geom_line(data = medians, 
-            aes(x = date - pd, y = median_y), 
+            aes(x = date - pd, y = log(median_y)), 
             color = values[1], 
             linewidth = 0.4) +
   coord_cartesian(xlim = c(as.Date('2020-01-01'), as.Date('2021-10-31'))) +
   # scale_y_continuous(breaks = c(0.25,0.3,0.35)) +
-  theme_bw() + xlab('') + ylab('Capacity')
+  theme_bw() + xlab('') + ylab('')
 p3
 pdf(paste0("Output/AB_constant_plot_beta.pdf"), width = 2.58, height = 1.2)
 print(p3)
@@ -391,13 +492,7 @@ if(F){
   data$group = 'A'
   data$group[data$color == '2'] = 'B'
   data$group = factor(data$group, levels = c('A','B'))
-  fexpect0 = data.frame(y = c(observed_matrix$v1,observed_matrix$v2,
-                              observed_matrix$v3),
-                        x = rep(1:nrow(observed_matrix),2),
-                        group = rep(c('A','B'), 
-                                    each = nrow(observed_matrix)))
-  fexpect0$date = as.Date('2019-12-31') + fexpect0$x
-  fexpect0$group = factor(fexpect0$group, levels = c('A','B'))
+
   ggplot() +
     geom_point(data = fexpect0, 
                aes(x = date, y = y/28, 
@@ -417,69 +512,6 @@ if(F){
     coord_cartesian(xlim = c(as.Date('2020-01-01'), as.Date('2021-10-31')),
                     ylim = c(1,2*10^4))
 }
-
-
-
-fitlist = list()
-
-for (n in 1:24) {
-  Onsets_mat = Onsets_mat_list[[n]]
-  Onset1 = Onsets_mat[poolday + 1:poolday, 1]
-  Onset2 = Onsets_mat[poolday + 1:poolday, 2]
-  
-  mobility = rep(0.01,30) # Mobility: Control force
-  Mobility_matrix = diag(mobility)
-  
-  seed_vec =  (Onset1 + Onset2) %*% Mobility_matrix %>% as.numeric()
-  p = Onset1/(Onset1 + Onset2)
-  
-  seed_matrix = rbind(seed_vec * p, seed_vec * (1-p))
-  seed_mat_I1 = diag(seed_matrix[1,])
-  seed_mat_I2 = diag(seed_matrix[2,])
-  
-  nday = 100
-  
-  expected_matrix = observed_matrix[poolday*n+1:nday,] - Onsets_mat[poolday+1:nday,]
-  
-  expected_matrix[expected_matrix[,1]<0,1] = 0
-  expected_matrix[expected_matrix[,2]<0,2] = 0
-  expected_matrix = round(expected_matrix)
-  if(n == 1){
-    expected_matrix[(nday-30):nday,] = 0
-  }else{
-    expected_matrix[(nday-50):nday,] = 0
-  }
-  expected_matrix[1:30,] = 0
-  
-  stan_data <- list(
-    poolday = poolday,
-    nday = nday,
-    expected_matrix = expected_matrix, 
-    pars = pars,
-    seed_mat_I1 = seed_mat_I1,
-    seed_mat_I2 = seed_mat_I2,
-    seed_vec = seed_vec
-  )
-  # Fit the model
-  fit <- stan(file = 'evoSSS.stan', data = stan_data, 
-              iter = 15000, chains = 4, warmup = 10000,
-              verbose = TRUE)
-  
-  posterior = rstan::extract(fit)
-  contact = mean(posterior$contact)
-  N = seed_vec * contact + 1
-
-  Onsets_mat = simu(seed_mat_I1, seed_mat_I2, N, poolday, pars)
-  
-  fitlist[[n]] = fit
-  Onsets_mat_list[[n+1]] = Onsets_mat
-}
-
-save(fitlist, file = 'evoSSS_chain.rdata')
-load('evoSSS_chain.rdata')
-posterior = rstan::extract(fitlist[[1]])
-posterior$contact[1:5000]
-
 
 # Generate trace plots 
 if(F){
