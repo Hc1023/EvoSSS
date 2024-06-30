@@ -2,16 +2,10 @@ rm(list = ls())
 library(rstan)
 library(ggplot2)
 library(scales)
-library(ggplot2)
-library(scales)
 library(ggnewscale)
 library(tidyverse)
-
-df = read.csv('../3_Epidemiological_analysis/Covid19CasesGISAID.csv')
-
-df$Var1 = as.Date(df$Var1)
-# df = df[df$Var1 < as.Date('2021-12-01'),]
-df = df[df$Mutations %in% c('Lineage A', 'Lineage B'),]
+library(dplyr)
+library(RColorBrewer)
 
 update_fun = function(pars, states_old, N){
   
@@ -32,7 +26,42 @@ update_fun = function(pars, states_old, N){
   return(cbind(S_new, I1_new, I2_new, Onset1, Onset2))
 }
 
-simu <- function(seed_mat_I1, seed_mat_I2, N, poolday, pars) {
+update_fun_stochastic = function(pars, states_old, N){
+  
+  beta1 = pars[1]
+  beta2 = pars[2]
+  gamma = pars[3]
+  
+  mat = data.frame()
+  for (h in 1:nrow(states_old)) {
+    S <- states_old[h,1]
+    I1 <- states_old[h,2]
+    I2 <- states_old[h,3]
+    
+    pS_vec = c(max(0,beta1*I1/N), max(0,beta2*I2/N), 
+               max(0,1-beta1*I1/N-beta2*I2/N))
+    sample_S <- rmultinom(1, size = S, prob = pS_vec)
+    pI_vec <- c(gamma, 1-gamma)
+    sample_I1 <- rmultinom(1, size = I1, prob = pI_vec)
+    sample_I2 <- rmultinom(1, size = I2, prob = pI_vec)
+    
+    ## new values
+    S_new <- sample_S[3]
+    I1_new <- sample_I1[2] + sample_S[1] 
+    I2_new <- sample_I2[2] + sample_S[2] 
+    
+    Onset1 <- sample_S[1]
+    Onset2 <- sample_S[2]
+    mat[h,1:5] = c(S_new, I1_new, I2_new, Onset1, Onset2)
+  }
+  
+  return(mat)
+}
+
+
+simu <- function(seed_mat_I1, seed_mat_I2, N, poolday,
+                 pars = c(0.379, 0.398, 0.157)) {
+  
   # Initial conditions
   I1_old = seed_mat_I1[1,]
   I2_old = seed_mat_I2[1,]
@@ -45,7 +74,7 @@ simu <- function(seed_mat_I1, seed_mat_I2, N, poolday, pars) {
   Onsets_mat <- matrix(0, ndays, 2)
   
   for (t in 2:ndays) {
-    states_old = update_fun(pars = pars, states_old = states_old, N = N)
+    states_old = update_fun_stochastic(pars = pars, states_old = states_old, N = N)
     if(t <= nrow(seed_mat_I1)){
       states_old[t,2:3] = states_old[t,2:3] + 
         c(seed_mat_I1[t,t], seed_mat_I2[t,t])
@@ -56,128 +85,46 @@ simu <- function(seed_mat_I1, seed_mat_I2, N, poolday, pars) {
   return(Onsets_mat)
 }
 
-pars = c(0.379, 0.398, 0.157)
+
 poolday = 30
 # The initial cycle - epidemic outbreak
 seed_vec = matrix(0,2,2)
-seed_vec[,1] = round(34*c(0.4,0.6))
+seed_vec[,1] = round(34*c(0.3,0.7))
 seed_mat_I1 = diag(seed_vec[1,])
 seed_mat_I2 = diag(seed_vec[2,])
 N = rep(32583, 2)
 Onsets_mat_list = list()
-Onsets_mat = simu(seed_mat_I1, seed_mat_I2, N, poolday, pars)
+Onsets_mat = simu(seed_mat_I1, seed_mat_I2, N, poolday, pars = c(0.38, 0.38, 0.157))
+sum(Onsets_mat[,1])/(sum(Onsets_mat[,1])+sum(Onsets_mat[,2]))
+
 Onsets_mat_list[[1]] = Onsets_mat
 
-observed1 = df[df$Mutations == 'Lineage A' & df$Var1 >= as.Date('2020-01-01'),]
-observed2 = df[df$Mutations == 'Lineage B' & df$Var1 >= as.Date('2020-01-01'),]
-observed_matrix = cbind(observed1$Freq, observed2$Freq)
 # document_scale = max(Onsets_mat[,2])/max(df$Freq[df$Var1<as.Date('2020-02-01')])
 observed_matrix = observed_matrix*28
 
-load('evoSSS_chain.rdata')
+poolday = 30
+nday = 100
+expected_matrix = observed_matrix[1:nday,]
+expected_matrix[expected_matrix < 0] = 0
+expected_matrix = round(expected_matrix)
+expected_matrix[(poolday*2+1):nday,] = 0
+fexpect = data.frame(x = rep(1:nday,2), 
+                     y = c(expected_matrix[1:nday,1],
+                           expected_matrix[1:nday,2]),
+                     group = factor(rep(c('A','B'), 
+                                        each = nday),
+                                    levels = c('A','B')))
 
-for (j in 1:24) {
-  j = 1
-  Onsets_mat = Onsets_mat_list[[n]]
-  Onset1 = Onsets_mat[poolday + 1:poolday, 1]
-  Onset2 = Onsets_mat[poolday + 1:poolday, 2]
-  
-  mobility = rep(1/30,30) # Mobility: Control force
-  Mobility_matrix = diag(mobility)
-  
-  seed_vec =  (Onset1 + Onset2) %*% Mobility_matrix %>% as.numeric()
-  p = Onset1/(Onset1 + Onset2)
-  
-  seed_matrix = rbind(seed_vec * p, seed_vec * (1-p))
-  seed_mat_I1 = diag(seed_matrix[1,])
-  seed_mat_I2 = diag(seed_matrix[2,])
-  
-  nday = 100
-  
-  expected_matrix = observed_matrix[poolday*j+1:nday,] - Onsets_mat[poolday+1:nday,]
-  
-  expected_matrix[expected_matrix<0] = 0
-  expected_matrix = round(expected_matrix)
-  expected_matrix[(2*poolday+1):nday,] = 0
-  
-  stan_data <- list(
-    poolday = poolday,
-    nday = nday,
-    expected_matrix = expected_matrix, 
-    pars = pars,
-    seed_mat_I1 = seed_mat_I1,
-    seed_mat_I2 = seed_mat_I2,
-    seed_vec = seed_vec
-  )
-  # Fit the model
-  fit <- stan(file = 'evoSSS.stan', data = stan_data, 
-              iter = 15000, chains = 4, warmup = 10000,
-              verbose = TRUE)
-  
-  posterior = rstan::extract(fit)
-  contact = mean(posterior$contact)
-  N = seed_vec * contact + 1
-  
-  Onsets_mat = simu(seed_mat_I1, seed_mat_I2, N, poolday, pars)
-  
-  fitlist[[n]] = fit
-  Onsets_mat_list[[n+1]] = Onsets_mat
-}
-
-save(fitlist, file = 'evoSSS_chain.rdata')
-
-posterior = rstan::extract(fitlist[[1]])
-posterior$contact[1:5000]
+fonset = data.frame(x = rep(1:nday,2), 
+                    y = c(Onsets_mat[1:nday,1],
+                          Onsets_mat[1:nday,2]),
+                    group = factor(rep(c('A','B'), each = nday),
+                                   levels = c('A','B')))
 
 
-# Generate trace plots 
-if(F){
-  for (i in 1:length(fitlist)) {
-    wd = paste0('Output/traceplot/evoSSS_', 
-                as.character(i), '.png')
-    png(file = wd, 
-        width = 2.5, height = 2, 
-        unit = 'in',
-        res = 600)
-    p = traceplot(fitlist[[i]]) + 
-      ggtitle(as.character(i)) + ylab('') +
-      theme(legend.position = 'none') + 
-      scale_x_continuous(breaks = seq(10000,15000,2500),
-                         labels = seq(0,5000,2500))
-    print(p)
-    dev.off()
-  }
-  
-}
+ggplot() +
+  geom_point(data = fexpect, 
+             aes(x = x, y = y, group = group, color = group)) +
+  geom_line(data = fonset,
+            aes(x = x, y = y, group = group, color = group))
 
-dfposterior = data.frame()
-for (i in 1:length(fitlist)) {
-  fit = fitlist[[i]]
-  posterior_samples = rstan::extract(fit)
-  
-  dfposterior[i,1] = i
-  dfposterior$m[i] = mean(posterior_samples$contact)
-  dfposterior$q1[i] = quantile(posterior_samples$contact, 0.025)
-  dfposterior$q2[i] = quantile(posterior_samples$contact, 0.975)
-  dfposterior$text[i] = paste0(sprintf('%.3f', dfposterior$m[i]),' (',
-                               sprintf('%.3f',dfposterior$q1[i]),' ~ ',
-                               sprintf('%.3f',dfposterior$q2[i]),')')
-  
-}
-
-if(F){
-  write.csv(dfposterior, file = 'Output/evoSSS_parameters.csv',
-            row.names = F)
-}
-
-ggplot(dfposterior, aes(V1, m)) +
-  geom_line() +
-  geom_point(shape = 19, alpha = 0.6) +
-  geom_errorbar(
-    aes(ymin = q1, ymax = q2),
-    width = 0.5
-  ) + theme_bw() +
-  scale_y_continuous(trans='log10') +
-  annotation_logticks(sides = "l", linewidth = 0.1, alpha = 0.5) +
-  xlab('Cycle') + ylab('Susceptible ratio')
-# Add ratio of A to B
