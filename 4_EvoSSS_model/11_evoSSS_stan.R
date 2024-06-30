@@ -5,6 +5,7 @@ library(scales)
 library(ggnewscale)
 library(tidyverse)
 library(dplyr)
+library(RColorBrewer)
 
 df = read.csv('../3_Epidemiological_analysis/Covid19CasesGISAID.csv')
 
@@ -271,7 +272,7 @@ save(fitlist, file = 'AB_constant_beta.rdata')
 
 load('AB_constant_beta.rdata')
 
-dfplot_simu = determinant_fun(cond = F, ifsimu  = T, n_simu = n_simu, require_dfplot_simu = T)
+dfplot_simu = determinant_fun(cond = F, ifsimu  = T, n_simu = 1, require_dfplot_simu = T)
 dfplot_simu$date = as.Date('2019-12-31') + dfplot_simu$x
 dfplot_simu$group2 = 'A'
 dfplot_simu$group2[dfplot_simu$color == '2'] = 'B'
@@ -312,12 +313,9 @@ df = df0[df0$group == 'capacity',c(1,3)]
 colnames(df)[2] = 'capacity'
 df$mobility = df0$y[df0$group == 'mobility']
 df$y1 =  df$capacity * df$mobility
-
 df$y1_log = log(df$y1)
-df$y2_log = log(df$y2)
-
 df$y1_transform = 100*df$y1
-library(ggnewscale)
+
 load('../3_Epidemiological_analysis/growth_rate.rdata')
 df2 = plot_data[plot_data$Mutations == 'Lineage B',]
 df2 = na.omit(df2)
@@ -327,11 +325,11 @@ for (i in 1:nrow(df)) {
 }
 df = na.omit(df)
 # df$size = exp(df$gr)
-df$gr2 = sprintf('%.2f', df$gr+0.002)
+df$`Growth rate` = sprintf('%.2f', df$gr+0.002)
 
 p = ggplot() +
   geom_point(data = fexpect0, 
-             aes(x = date, y = y/28, 
+             aes(x = date, y = y, 
                  group = group, color = group),
              size = 0.4, shape = 16) +
   geom_line(data = data, 
@@ -340,9 +338,9 @@ p = ggplot() +
   geom_line(data = dfplot_simu, 
             aes(x = date, y = y/28, group = group, color= group2),
             linewidth = 0.5, alpha = 0.2) +
-  scale_color_manual(name="",
+  scale_color_manual(name="Variant",
                      values = alpha(values, 0.7)) +
-  scale_fill_manual(name="",
+  scale_fill_manual(name="Variant",
                     values = alpha(values, 0.3)) +
   new_scale_color() + 
   new_scale_fill() +
@@ -350,9 +348,9 @@ p = ggplot() +
             aes(x = date, y = y1_transform),
             color = alpha('darkblue', 0.7)) +
   geom_point(data = df, 
-             aes(x = date, y = y1_transform, size = gr2, fill = gr2),
+             aes(x = date, y = y1_transform, size = `Growth rate`, fill = `Growth rate`),
              shape = 21) +
-  scale_fill_manual(values = alpha(colorRampPalette(c("black", "white"))(6), 0.9)) +
+  scale_fill_manual(values = alpha(colorRampPalette(c("white", "darkblue"))(6), 0.9)) +
   scale_y_continuous(trans='log10',
                      breaks = c(1,10,100,1000,10000),
                      labels = c(expression(10^0),expression(10^1),
@@ -371,7 +369,14 @@ p = ggplot() +
   labs(x = "Date", y = "Proportion") +
   theme_bw() +
   theme(legend.position = "right",
-        plot.title = element_text(hjust = 0.5)) +
+        legend.key.size = unit(0.2,'cm'),
+        legend.spacing = unit(0.0,'cm'),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10,
+                                    margin = margin(2, 0, 2, 0)),
+        legend.margin = margin(0, 0, 0, 0),
+        axis.title.y.right = element_text(color = "darkblue"),
+        axis.text.y.right = element_text(color = "darkblue")) +
   scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="6 months"),
                minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-11-01'), by ='1 month'),
                date_labels = "%y-%b") +
@@ -381,110 +386,82 @@ p = ggplot() +
 
 p
 
-
-
-
-df2_list = list()
-for (n_simu in 1:100) {
-  print(n_simu)
-  data = determinant_fun(cond = F, ifsimu  = T, n_simu = n_simu)
-  df2_list[[n_simu]] = data$y
-}
-simu_Onset = data.frame(bind_cols(df2_list))
-ci_lower <- apply(simu_Onset, 1, quantile, probs = 0.025, na.rm = T)
-ci_upper <- apply(simu_Onset, 1, quantile, probs = 0.975, na.rm = T)
-plot_data <- data.frame(
-  x = data$x,
-  V = data$color,
-  # Observed = observed_cases,
-  Fitted = rowMeans(simu_Onset),
-  LowerCI = ci_lower,
-  UpperCI = ci_upper
-)
-plot_data$date = plot_data$x + as.Date('2019-12-31')
-plot_data$group = 'A'
-plot_data$group[plot_data$V == '2'] = 'B'
-plot_data$group = factor(plot_data$group, levels = c('A','B'))
-save(simu_Onset, plot_data, file = 'AB_constant_plot.rdata')
-load('AB_constant_plot.rdata')
-
-library(RColorBrewer)
-values = c(hue_pal()(3)[1], hue_pal()(3)[3])
-plot_data = plot_data[plot_data$x>1,]
-unique(plot_data$group)
-p = ggplot() +
-  geom_point(data = fexpect0, 
-             aes(x = date, y = y/28, 
-                 group = group, color = group),
-             size = 0.4, shape = 16) +
-  geom_ribbon(data = plot_data, 
-              aes(x = date, group = group, 
-                  ymin = LowerCI/28, ymax = UpperCI/28, fill = group)) +  # Confidence interval
-  geom_line(data = plot_data, 
-            aes(x = date, y = Fitted/28, 
-                group = group, color = group), linewidth = 1) +
-  scale_color_manual(name="",
-                     values = alpha(values, 0.7)) +
-  scale_fill_manual(name="",
-                    values = alpha(values, 0.3)) +
-  scale_y_continuous(trans='log10') +
-  coord_cartesian(ylim = c(2,max(plot_data$Fitted))) +
-  labs(x = "Date", y = "Proportion") +
-  theme_bw() +
-  theme(legend.position = "right",
-        plot.title = element_text(hjust = 0.5)) +
-  scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="6 months"),
-               minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-05-01'), by ='1 month'),
-               date_labels = "%y-%b", expand = c(0, 0)) +
-  scale_y_continuous(trans='log10', 
-                     breaks = c(1,10,100,1000,10000),
-                     labels = c(expression(10^0),expression(10^1),
-                                expression(10^2), expression(10^3),
-                                expression(10^4))) +
-  xlab('') + ylab('Cases') + 
-  coord_cartesian(xlim = c(as.Date('2020-01-01'), as.Date('2021-10-31')),
-                  ylim = c(1,4*10^4)) +
-  theme(legend.position = c(0.12,0.95),
-        legend.background = element_rect(color = NA, fill = NA),
-        legend.key = element_blank(),
-        legend.key.size = unit(0.2, units = 'cm'))
-
-pdf(paste0("Output/evoSSS_stan_plot.pdf"), width = 2.5, height = 1.8)
+pdf(paste0("Output/evoSSS_stan_plot.pdf"), width = 4.5, height = 2)
 print(p)
 dev.off()
 
-data = determinant_fun(cond = F, ifsimu  = T, n_simu = n_simu)
 
+if(F){
+  df2_list = list()
+  for (n_simu in 1:100) {
+    print(n_simu)
+    data = determinant_fun(cond = F, ifsimu  = T, n_simu = n_simu)
+    df2_list[[n_simu]] = data$y
+  }
+  simu_Onset = data.frame(bind_cols(df2_list))
+  ci_lower <- apply(simu_Onset, 1, quantile, probs = 0.025, na.rm = T)
+  ci_upper <- apply(simu_Onset, 1, quantile, probs = 0.975, na.rm = T)
+  plot_data <- data.frame(
+    x = data$x,
+    V = data$color,
+    # Observed = observed_cases,
+    Fitted = rowMeans(simu_Onset),
+    LowerCI = ci_lower,
+    UpperCI = ci_upper
+  )
+  plot_data$date = plot_data$x + as.Date('2019-12-31')
+  plot_data$group = 'A'
+  plot_data$group[plot_data$V == '2'] = 'B'
+  plot_data$group = factor(plot_data$group, levels = c('A','B'))
+  save(simu_Onset, plot_data, file = 'AB_constant_plot.rdata')
+  load('AB_constant_plot.rdata')
+  
 
+  values = c(hue_pal()(3)[1], hue_pal()(3)[3])
+  plot_data = plot_data[plot_data$x>1,]
+  unique(plot_data$group)
+  p = ggplot() +
+    geom_point(data = fexpect0, 
+               aes(x = date, y = y, 
+                   group = group, color = group),
+               size = 0.4, shape = 16) +
+    geom_ribbon(data = plot_data, 
+                aes(x = date, group = group, 
+                    ymin = LowerCI/28, ymax = UpperCI/28, fill = group)) +  # Confidence interval
+    geom_line(data = plot_data, 
+              aes(x = date, y = Fitted/28, 
+                  group = group, color = group), linewidth = 1) +
+    scale_color_manual(name="",
+                       values = alpha(values, 0.7)) +
+    scale_fill_manual(name="",
+                      values = alpha(values, 0.3)) +
+    scale_y_continuous(trans='log10') +
+    coord_cartesian(ylim = c(2,max(plot_data$Fitted))) +
+    labs(x = "Date", y = "Proportion") +
+    theme_bw() +
+    theme(legend.position = "right",
+          plot.title = element_text(hjust = 0.5)) +
+    scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="6 months"),
+                 minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-05-01'), by ='1 month'),
+                 date_labels = "%y-%b", expand = c(0, 0)) +
+    scale_y_continuous(trans='log10', 
+                       breaks = c(1,10,100,1000,10000),
+                       labels = c(expression(10^0),expression(10^1),
+                                  expression(10^2), expression(10^3),
+                                  expression(10^4))) +
+    xlab('') + ylab('Cases') + 
+    coord_cartesian(xlim = c(as.Date('2020-01-01'), as.Date('2021-10-31')),
+                    ylim = c(1,4*10^4)) +
+    theme(legend.position = c(0.12,0.95),
+          legend.background = element_rect(color = NA, fill = NA),
+          legend.key = element_blank(),
+          legend.key.size = unit(0.2, units = 'cm'))
+  
+  pdf(paste0("Output/evoSSS_stan_plot2.pdf"), width = 4.5, height = 2)
+  print(p)
+  dev.off()
+}
 
-df$date = as.Date(df$date)
-pd = 8
-
-medians <- df %>%
-  group_by(date, group) %>%
-  summarize(median_y = median(y))
-p3 = ggplot() +
-  geom_boxplot(data = df, 
-               aes(x = date-pd, y = log(y), group = date),
-               color = alpha(values[1],0.7), 
-               fill = alpha(values[1],0.3),
-               width = 6,
-               outlier.shape = NA) +
-  scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2024-11-01'), by="6 months"),
-               minor_breaks = seq(as.Date('2019-12-01'), as.Date('2024-11-01'), by ='1 month'),
-               date_labels = "%y-%b",
-               expand = c(0, 0)) +
-  geom_line(data = medians, 
-            aes(x = date - pd, y = log(median_y)), 
-            color = values[1], 
-            linewidth = 0.4) +
-  coord_cartesian(xlim = c(as.Date('2020-01-01'), as.Date('2021-10-31'))) +
-  # scale_y_continuous(breaks = c(0.25,0.3,0.35)) +
-  theme_bw() + xlab('') + ylab('')
-p3
-pdf(paste0("Output/AB_constant_plot_beta.pdf"), width = 2.58, height = 1.2)
-print(p3)
-dev.off()
 
 if(F){
   data = determinant_fun(cond = F, ifsimu  = F, n_simu = n_simu)
@@ -534,33 +511,26 @@ if(F){
 }
 
 dfposterior = data.frame()
-for (i in 1:length(fitlist)) {
-  fit = fitlist[[i]]
+for (i in 1:(length(fitlist)-1)) {
+  fit = fitlist[[i+1]]
   posterior_samples = rstan::extract(fit)
   
-  dfposterior[i,1] = i
-  dfposterior$m[i] = mean(posterior_samples$contact)
-  dfposterior$q1[i] = quantile(posterior_samples$contact, 0.025)
-  dfposterior$q2[i] = quantile(posterior_samples$contact, 0.975)
-  dfposterior$text[i] = paste0(sprintf('%.3f', dfposterior$m[i]),' (',
-                            sprintf('%.3f',dfposterior$q1[i]),' ~ ',
-                            sprintf('%.3f',dfposterior$q2[i]),')')
-  
+  dfposterior[i,1] = i+1
+  dfposterior$contact_mean[i] = mean(posterior_samples$contact)
+  dfposterior$contact_q025[i] = quantile(posterior_samples$contact, 0.025)
+  dfposterior$contact_q975[i] = quantile(posterior_samples$contact, 0.975)
+  dfposterior$contact_text[i] = paste0(sprintf('%.3f', dfposterior$contact_mean[i]),' (',
+                            sprintf('%.3f',dfposterior$contact_q025[i]),' ~ ',
+                            sprintf('%.3f',dfposterior$contact_q975[i]),')')
+  dfposterior$mobility_mean[i] = mean(posterior_samples$mobility)
+  dfposterior$mobility_q025[i] = quantile(posterior_samples$mobility, 0.025)
+  dfposterior$mobility_q975[i] = quantile(posterior_samples$mobility, 0.975)
+  dfposterior$mobility_text[i] = paste0(sprintf('%.3f', dfposterior$mobility_mean[i]),' (',
+                               sprintf('%.3f',dfposterior$mobility_q025[i]),' ~ ',
+                               sprintf('%.3f',dfposterior$mobility_q975[i]),')')
 }
 
 if(F){
   write.csv(dfposterior, file = 'Output/evoSSS_parameters.csv',
             row.names = F)
 }
-
-ggplot(dfposterior, aes(V1, m)) +
-  geom_line() +
-  geom_point(shape = 19, alpha = 0.6) +
-  geom_errorbar(
-    aes(ymin = q1, ymax = q2),
-    width = 0.5
-  ) + theme_bw() +
-  scale_y_continuous(trans='log10') +
-  annotation_logticks(sides = "l", linewidth = 0.1, alpha = 0.5) +
-  xlab('Cycle') + ylab('Susceptible ratio')
-# Add ratio of A to B
