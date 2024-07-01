@@ -29,7 +29,7 @@ migration_distribution <- function(qm = 0.5,
   colnames(dat)[2:ncol(dat)] = as.character(k)
   dat_gather <- gather(dat, k, y, -q)
   dat_gather$k = factor(dat_gather$k, 
-                        levels = as.character(k))
+                        levels = rev(as.character(k)))
   
   return(dat_gather)
 }
@@ -48,7 +48,7 @@ p1 = ggplot(dat_gather1,
   scale_color_manual(name = '',
                      values = c( '#cb8335','#a3a637',
                                  '#68a588','#579aa7','#8781ba'))
-
+p1
 qm = 0.3
 dat_gather2 = migration_distribution(qm = qm)
 p2 = ggplot(dat_gather2, 

@@ -89,19 +89,24 @@ simu <- function(seed_mat_I1, seed_mat_I2, N, poolday,
 poolday = 30
 # The initial cycle - epidemic outbreak
 
-N = rep(32583, 2)
+
+
 
 pc = c()
-seeds = c(50,20,10,6,3)
+s = 3
+hotspot = c(10, 5, 2, 1)
 nn = 1000
-for (s in seeds) {
-  print(s)
+for (h in hotspot) {
+  print(h)
+  N = rep(32583, h+1)
   for (i in 1:nn) {
-    seed_vec = matrix(0,2,2)
-    seed_vec[,1] = rmultinom(1, size = s, prob = c(0.3,0.7))
+    # print(i)
+    seed_vec = rmultinom(h, size = s, prob = c(0.5,0.5))
+    seed_vec = cbind(seed_vec, c(0,0))
     seed_mat_I1 = diag(seed_vec[1,])
     seed_mat_I2 = diag(seed_vec[2,])
-    Onsets_mat = simu(seed_mat_I1, seed_mat_I2, N, poolday, pars = c(0.38, 0.38, 0.157))
+    Onsets_mat = simu(seed_mat_I1, seed_mat_I2, N, poolday, 
+                      pars = c(0.38, 0.38, 0.157))
     p = sum(Onsets_mat[,1])/(sum(Onsets_mat[,1])+sum(Onsets_mat[,2]))
     pc = c(pc, p)
   }
@@ -109,55 +114,17 @@ for (s in seeds) {
 }
 
 dat1 = data.frame(pc = pc,
-                  seed = rep(as.character(seeds), 
+                  hotspot = rep(as.character(hotspot), 
                              each = nn))
-dat1$seed = factor(dat1$seed, levels = seeds)
+dat1$hotspot = factor(dat1$hotspot, levels = hotspot)
 
-pc = c()
-seeds = c(50,20,10,6,3)
-nn = 1000
-for (s in seeds) {
-  print(s)
-  for (i in 1:nn) {
-    seed_vec = matrix(0,2,2)
-    seed_vec[,1] = rmultinom(1, size = s, prob = c(0.5,0.5))
-    seed_mat_I1 = diag(seed_vec[1,])
-    seed_mat_I2 = diag(seed_vec[2,])
-    Onsets_mat = simu(seed_mat_I1, seed_mat_I2, N, poolday, pars = c(0.38, 0.38, 0.157))
-    p = sum(Onsets_mat[,1])/(sum(Onsets_mat[,1])+sum(Onsets_mat[,2]))
-    pc = c(pc, p)
-  }
-  
-}
-
-dat2 = data.frame(pc = pc,
-                  seed = rep(as.character(seeds), 
-                             each = nn))
-dat2$seed = factor(dat2$seed, levels = seeds)
-
-save(dat1, dat2, file = 'bottleneck.rdata')
-values = c('#fbb365','#d3d667', 
-           '#98d5b8','#87cad7','#b7b1ea')
-values2 = c( '#cb8335','#a3a637',
-   '#68a588','#579aa7','#8781ba')
+# save(dat1, dat2, file = 'bottleneck.rdata')
+values = c('#d3d667', '#98d5b8','#87cad7','#b7b1ea')
+values2 = c( '#a3a637', '#68a588','#579aa7','#8781ba')
 library(ggpubr)
 
 p1 = ggdensity(dat1, x = "pc", add = "mean",
-               fill = 'seed', color = 'seed', rug = F) +
-  ylab('Density') + xlab('') +
-  geom_vline(xintercept = 0.3, linetype = "dashed") +
-  scale_fill_manual(name = '',
-                    values = values) +
-  scale_color_manual(name = '',
-                     values = values2) +
-  theme(legend.position = 'right',
-        legend.background = element_rect(color = NA, fill = NA),
-        legend.key=element_blank(),
-        legend.spacing.y = unit(0.05,'cm'),
-        legend.key.size = unit(0.4,'cm'))
-p1
-p2 = ggdensity(dat2, x = "pc", add = "mean",
-               fill = 'seed', color = 'seed', rug = F) +
+               fill = 'hotspot', color = 'hotspot', rug = F) +
   ylab('Density') + xlab('') +
   geom_vline(xintercept = 0.5, linetype = "dashed") +
   scale_fill_manual(name = '',
@@ -168,12 +135,9 @@ p2 = ggdensity(dat2, x = "pc", add = "mean",
         legend.background = element_rect(color = NA, fill = NA),
         legend.key=element_blank(),
         legend.spacing.y = unit(0.05,'cm'),
-        legend.key.size = unit(0.4,'cm')) 
+        legend.key.size = unit(0.4,'cm'))
+p1
 
-p2
-
-
-pdf(file = paste0('Output/bottleneck.pdf'), width = 3, height = 1.8)
+pdf(file = paste0('Output/bottleneck_hotspot.pdf'), width = 3, height = 1.8)
 print(p1)
-print(p2)
 dev.off() 
