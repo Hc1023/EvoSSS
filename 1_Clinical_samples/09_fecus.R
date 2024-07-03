@@ -85,6 +85,7 @@ col = list(
   Source = v2
 )
 
+
 p = Heatmap(df, cluster_columns = FALSE, cluster_rows = FALSE,
         rect_gp = gpar(col = "grey", lwd = 0.5),
         right_annotation = rowAnnotation(Source = g$Source,
@@ -95,8 +96,11 @@ p = Heatmap(df, cluster_columns = FALSE, cluster_rows = FALSE,
           title = "", at = c(0, 0.5, 1), 
           labels = c("0", "0.5", "1")),
         show_row_dend = FALSE,
-        show_column_dend = FALSE)
+        show_column_dend = FALSE,
+        row_names_gp = gpar(col = rep(c('#1f4c7c','#a62b17'), 9)))
 p
 pdf("Output/feces.pdf", width = 12, height = 4)
 print(p)
 dev.off()
+
+
