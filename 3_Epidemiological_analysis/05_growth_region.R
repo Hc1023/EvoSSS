@@ -31,10 +31,14 @@ getplot = function(dfplot){
 
 p1 = getplot(dfplot_A)
 p2 = getplot(dfplot_B)
+p3 = getplot(dfplot_C)
+p4 = getplot(dfplot_T)
 
-pdf(paste0("Output/growth_region", ".pdf"), width = 3, height = 1.6)
+pdf(paste0("Output/growth_region.pdf"), width = 2.5, height = 1.6)
 print(p1)
 print(p2)
+print(p3)
+print(p4)
 dev.off()
 
 
