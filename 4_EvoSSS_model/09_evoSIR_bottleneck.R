@@ -106,11 +106,14 @@ getdf = function(n, seed, pA){
   return(df)
 }
 
-df1 = getdf(n = 5000, seed = 20, pA = 0.2)
-df2 = getdf(n = 5000, seed = 5, pA = 0.2)
-df3 = getdf(n = 5000, seed = 20, pA = 0.4)
-df4 = getdf(n = 5000, seed = 5, pA = 0.4)
-save(df1, df2, df3, df4, file = 'evoSIR_bottleneck.rdata')
+if(F){
+  df1 = getdf(n = 5000, seed = 20, pA = 0.3)
+  df2 = getdf(n = 5000, seed = 5, pA = 0.3)
+  
+  save(df1, df2, file = 'evoSIR_bottleneck.rdata')
+}
+
+load('evoSIR_bottleneck.rdata')
 getplot = function(df, p0){
 
   means <- df %>%
@@ -140,18 +143,18 @@ getplot = function(df, p0){
           panel.grid.minor = element_blank(),
           panel.background = element_blank(),
           legend.position = 'right',
+          legend.key.size = unit(0.2,'cm'),
+          legend.key.width = unit(0.3,'cm'),
           legend.background = element_blank())
   p
   return(p)
 }
 
 pdf(paste0("Output/withinhost_bottleneck.pdf"), 
-    width = 2.3, height = 1.2)
+    width = 2.2, height = 1.2)
 
-print(getplot(df1, 0.2))
-print(getplot(df2, 0.2))
-print(getplot(df3, 0.4))
-print(getplot(df4, 0.4))
+print(getplot(df1, 0.3))
+print(getplot(df2, 0.3))
 
 dev.off()
 

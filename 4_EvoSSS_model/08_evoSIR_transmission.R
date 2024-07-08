@@ -113,37 +113,37 @@ v = '#2A41AF'
 values = c(alpha(v, 0.9), alpha(v, 0.6), 
            alpha(v, 0.4), alpha(v, 0.2))
 
+
+values = c(alpha('#6A619F',0.9), alpha('#2A419F',0.8), 
+           alpha('#4A71BF',0.7), alpha('#9AC1FF',0.7))
 p = ggplot() +
-  geom_point(data = long_data_combined,
-            aes(x = time, y = Population_label,
-                group = interaction(group, Strain),
-                color = interaction(group, Strain)),
-            size = 0.2) +
-  scale_color_manual(values = c(values1, values2)) +
-  new_scale_color() + 
+  # geom_point(data = long_data_combined,
+  #           aes(x = time, y = Population_label,
+  #               group = interaction(group, Strain),
+  #               color = interaction(group, Strain)),
+  #           size = 0.2) +
+  # scale_color_manual(values = c(values1, values2)) +
+  # new_scale_color() + 
   geom_line(data = data_ratio_combined[data_ratio_combined$time %in% seq(0,24*10,24),], 
             aes(x = time, y = ratio, color = factor(group))) +
   geom_point(data = data_ratio_combined[data_ratio_combined$time %in% seq(0,24*10,24),], 
              aes(x = time, y = ratio, color = factor(group))) +
   scale_color_manual(values = values, 
-                     name = expression(Delta*r)) +
-  labs(y = "Population (%)", x = "Transmission", color = "r2 value") +
+                     name = '') +
+  labs(y = expression('Ratio of V'['1']), x = "Transmission cycle") +
   theme_bw() +
-  theme(legend.position = "none") +
+  theme(legend.position = c(0.8,0.65),
+        legend.background = element_rect(color = NA, fill = NA),
+        legend.key = element_blank(),
+        legend.key.height = unit(0.2, 'cm'),
+        legend.key.width = unit(0.5, 'cm'))+
   scale_x_continuous(breaks = seq(0,24*10,24),
                      labels = 0:10) + 
   scale_y_continuous(limits = c(0, 0.5), 
-                     breaks = c(0,0.25,0.5), 
-                     labels = c(0,25,50),
-                     sec.axis = sec_axis(
-                       transform = ~ ., 
-                       name = 'Ratio (%)',
-                       breaks = c(0,0.25,0.5), 
-                       labels = c(0,25,50)
-                     ))
+                     breaks = c(0,0.25,0.5))
 
 p
-pdf(paste0("Output/withinhost_transmission.pdf"), width = 2.4, height = 1.6)
+pdf(paste0("Output/withinhost_transmission.pdf"), width = 2.5, height = 1.5)
 print(p)
 dev.off()
 
@@ -166,7 +166,7 @@ getplot = function(long_data){
     theme_bw() +
     theme(legend.position = "none") +
     scale_x_continuous(breaks = c(0,24,48,72)) +
-    scale_y_continuous(n.breaks = 3, labels = c(0,50,100))
+    scale_y_continuous(n.breaks = 3, labels = c('0.0','0.5','1.0'))
     
   return(p1)
 }

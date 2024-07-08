@@ -73,6 +73,8 @@ getplot = function(param_sets){
   v = '#2A41AF'
   values = c(alpha(v, 0.9), alpha(v, 0.6), 
              alpha(v, 0.4), alpha(v, 0.2))
+  values = c(alpha('#6A619F',0.9), alpha('#2A419F',0.8), 
+             alpha('#4A71BF',0.7), alpha('#9AC1FF',0.7))
   # values = alpha(c(hue_pal()(3)[1], '#2A41AF', '#4D7AAF', '#619CAF', '#85BDAF'),0.7)
   values = c(hue_pal()(3)[1], values)
   # Plotting
@@ -84,7 +86,7 @@ getplot = function(param_sets){
     theme_bw() +
     theme(legend.position = "none") +
     scale_x_continuous(breaks = c(0,24,48,72)) +
-    scale_y_continuous(n.breaks = 3, labels = c(0,50,100))
+    scale_y_continuous(n.breaks = 3, labels = c("0.0",'0.5','1.0'))
 
   p2 = ggplot(data_ratio, aes(x = time, y = ratio, color = factor(group))) +
     geom_line() +
@@ -97,20 +99,23 @@ getplot = function(param_sets){
     scale_x_continuous(breaks = c(0,24,48,72)) + 
     scale_y_continuous(limits = c(0, 1), 
                        minor_breaks = seq(0 , 1, 0.25),
-                       breaks = c(0,0.5,1), labels = c(0,50,100))
+                       breaks = c(0,0.5,1))
 
   return(list(p1, p2))
 }
 
 # Parameter sets for multiple simulations
+param_sets <- expand.grid(r1 = 0.2, 
+                          r2 = 0.2 + c(0.02, 0.05, 0.1, 0.2), 
+                          K = 5000, alpha12 = 1, alpha21 = 0, mu = 0)
+
+plist0 = getplot(param_sets)
 
 param_sets <- expand.grid(r1 = 0.2, 
                           r2 = 0.2 + c(0.02, 0.05, 0.1, 0.2), 
                           K = 5000, alpha12 = 2, alpha21 = 0, mu = 0)
 
-
 plist1 = getplot(param_sets)
-  
 param_sets <- expand.grid(r1 = 0.4, 
                           r2 = 0.4 + c(0.02, 0.05, 0.1, 0.2), 
                           K = 5000, alpha12 = 2, alpha21 = 0, mu = 0)
@@ -121,6 +126,8 @@ param_sets <- expand.grid(r1 = 0.4,
                           K = 5000, alpha12 = 4, alpha21 = 0, mu = 0)
 plist3 = getplot(param_sets)
 pdf(paste0("Output/withinhost_competition.pdf"), width = 1.6, height = 1.2)
+print(plist0[[1]])
+print(plist0[[2]])
 print(plist1[[1]])
 print(plist1[[2]])
 print(plist2[[1]])
@@ -135,24 +142,28 @@ v = '#2A41AF'
 values = c(alpha(v, 0.9), alpha(v, 0.6), 
            alpha(v, 0.4), alpha(v, 0.2))
 # values = alpha(c(hue_pal()(3)[1], '#2A41AF', '#4D7AAF', '#619CAF', '#85BDAF'),0.7)
+values = c(alpha('#6A619F',0.9), alpha('#2A419F',0.8), 
+           alpha('#4A71BF',0.7), alpha('#9AC1FF',0.7))
+show_col(values)
 values = c(hue_pal()(3)[1], values)
 # values = alpha(c(hue_pal()(3)[1], '#2A41AF', '#4D7AAF', '#619CAF', '#85BDAF'),0.7)
 p1 = ggplot(data_ratio, aes(x = time, y = ratio, color = factor(group))) +
   geom_line() +
   geom_point() +
   scale_color_manual(values = values[-1], 
-                     name = expression(r[B]-r[A])) +
+                     name = expression(r[2]-r[1])) +
   labs(y = "", x = "Time unit", color = "r2 value") +
   theme_bw() +
-  theme(legend.position = "right",
+  theme(legend.position = "top",
         legend.key.size = unit(0.4,'cm')) +
   scale_x_continuous(breaks = c(0,24,48,72)) + 
   scale_y_continuous(limits = c(0, 1), 
                      minor_breaks = seq(0 , 1, 0.25),
                      n.breaks = 3)
 
+
 p1
 
-pdf(paste0("Output/withinhost_competition_legend.pdf"), width = 1.8, height = 1.5)
+pdf(paste0("Output/withinhost_competition_legend.pdf"), width = 3, height = 1.5)
 print(p1)
 dev.off()

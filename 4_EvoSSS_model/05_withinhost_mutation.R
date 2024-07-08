@@ -54,19 +54,15 @@ ratio_fun = function(combined_results){
   return(data_ratio)
 }
 
-# values = c("#aa85a6", "#F8766D", "#619CFF") A+B, A, B
 getplot = function(combined_results){
 
   data_ratio = ratio_fun(combined_results)
   data_ratio$group = factor(data_ratio$group,
                             levels = as.character(format(mu_vec, digits = 2)))
   
-  # values = alpha(c('#2A41AF', '#4D7AAF', '#619CAF'),0.7)
-  # v = "#aa85a6"
-  v = '#2A41AF'
-  values = c(alpha(v, 0.9), alpha(v, 0.6), 
-             alpha(v, 0.4), alpha(v, 0.2))
-# show_col(values)
+  values = c(alpha('#6A619F',0.9), alpha('#2A419F',0.8), 
+             alpha('#4A71BF',0.7), alpha('#9AC1FF',0.7))
+
   p = ggplot(data_ratio, 
              aes(x = time, y = ratio, 
                  color = factor(group))) +
@@ -110,10 +106,10 @@ param_sets1 <- expand.grid(r1 = r, r2 = r, K = 100000,
                            alpha12 = 0, alpha21 = 0, 
                            mu = mu_vec)
 param_sets2 <- expand.grid(r1 = r, r2 = r, K = 100000, 
-                           alpha12 = 0, alpha21 = 1, 
+                           alpha12 = 0, alpha21 = 2, 
                            mu = mu_vec)
 param_sets3 <- expand.grid(r1 = r, r2 = r, K = 100000, 
-                           alpha12 = 1, alpha21 = 0, 
+                           alpha12 = 2, alpha21 = 0, 
                            mu = mu_vec)
 param_list = list(param_sets1, param_sets2, param_sets3)
 
@@ -153,7 +149,7 @@ getplot2 = function(combined_results){
     scale_y_continuous(limits = c(0, 1),
                        minor_breaks = seq(0 , 1, 0.25),
                        breaks = c(0,0.5,1),
-                       labels = c('0','50','100'))
+                       labels = c('0.0','0.5','1.0'))
   return(p)
 }
 
@@ -185,9 +181,11 @@ data_ratio = ratio_fun(results_list[[1]])
 data_ratio$group = factor(data_ratio$group,
                           levels = as.character(format(mu_vec, digits = 2)))
 
-getplot_legend = function(v){
-  values = c(alpha(v,0.9), alpha(v,0.6),
-             alpha(v,0.4), alpha(v,0.2))
+getplot_legend = function(){
+
+  values = c(alpha('#6A619F',0.9), alpha('#2A419F',0.8), 
+             alpha('#4A71BF',0.7), alpha('#9AC1FF',0.7))
+
   p = ggplot(data_ratio, 
              aes(x = time, y = ratio, 
                  color = factor(group))) +
@@ -198,7 +196,7 @@ getplot_legend = function(v){
                        label = c('1e-12','1e-6','2e-6','2e-3')) +
     labs(y = "", x = "Time unit") +
     theme_bw() +
-    theme(legend.position = "right",
+    theme(legend.position = "top",
           legend.key.size = unit(0.4,'cm'),
           legend.key.width = unit(0.4,'cm'),
           legend.key = element_blank(),
@@ -207,13 +205,11 @@ getplot_legend = function(v){
   
   return(p)
 }
-v = c('#2A41AF', "#F8766D", "#619CFF")
-getplot_legend(v[3])
+# v = c('#2A41AF', "#F8766D", "#619CFF")
+# getplot_legend(v[3])
 
 pdf(paste0("Output/withinhost_evolution_legend.pdf"), 
     width = 3, height = 1.4)
-print(getplot_legend(v[1]))
-print(getplot_legend(v[2]))
-print(getplot_legend(v[3]))
+print(getplot_legend())
 dev.off()
 # 2*10^(-6)
