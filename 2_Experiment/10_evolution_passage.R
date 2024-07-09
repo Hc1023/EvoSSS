@@ -1,6 +1,8 @@
 rm(list = ls())
 library(data.table)
 library(tidyverse)
+library(ComplexHeatmap)
+library(circlize)
 library(zoo)
 
 getplot = function(x, cell){
@@ -67,7 +69,7 @@ getplot = function(x, cell){
   rows_to_drop <- apply(plot_data[, -1], 1, function(x) all(x < 0.05))
   plot_data <- plot_data[!rows_to_drop, ]
   
-  colnames(plot_data) =c("MUT", "Yao", "Huang", "Original","Passage1", "Passage2" )
+  colnames(plot_data) =c("MUT", "Yao", "Huang", "Passage1","Passage2", "Passage3" )
   
   mat <- t(plot_data[1:nrow(plot_data), 2:ncol(plot_data)])
   class(mat) <- "numeric"
