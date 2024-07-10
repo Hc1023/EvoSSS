@@ -82,8 +82,8 @@ getplot = function(combined_results){
 }
 
 Kbase = 100000
-mu = 2*10^(-6)
-mu_vec = c((mu/2)^2, mu/2, mu, mu*10^3)
+mu = 10^(-6)
+mu_vec = c(10^(-12), 10^(-9), 10^(-6), 10^(-3))
 r = 0.2
 param_sets1 <- expand.grid(r1 = r, r2 = r, K = 100000, 
                           alpha12 = 0, alpha21 = 0, 
@@ -193,7 +193,7 @@ getplot_legend = function(){
     geom_point() +
     scale_color_manual(values = values,
                        name = expression(mu),
-                       label = c('1e-12','1e-6','2e-6','2e-3')) +
+                       label = c('1e-12','1e-9','1e-6','1e-3')) +
     labs(y = "", x = "Time unit") +
     theme_bw() +
     theme(legend.position = "top",
