@@ -105,18 +105,18 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
   poolday = 30
   nday = 100
   
-  # Create a dataframe with all dates
-  d0 <- expand.grid(date = as.Date('2019-12-29') + 0:2, 
-                    V = unique(df$V))
-  d1 <- d0 %>%
-    left_join(df, by = c("date", "V")) %>%
-    mutate(y = ifelse(is.na(y), 0, y))
-  d1 = d1 %>% group_by(V) %>% summarise(m = mean(y)) %>% as.data.frame()
-  
-  
+  # # Create a dataframe with all dates
+  # d0 <- expand.grid(date = as.Date('2019-12-29') + 0:2, 
+  #                   V = unique(df$V))
+  # d1 <- d0 %>%
+  #   left_join(df, by = c("date", "V")) %>%
+  #   mutate(y = ifelse(is.na(y), 0, y))
+  # d1 = d1 %>% group_by(V) %>% summarise(m = mean(y)) %>% as.data.frame()
+  # 
+  # >  sum(d1$m)
+  # [1] 6.666667
   seed_matrix <- matrix(0, nrow=n, ncol=poolday)
-  seed_matrix[,1] = c(d1[d1$V == 'A','m'],
-                      d1[d1$V == 'B','m']) + 1e-3
+  seed_matrix[,1] = 6.6*c(0.4,0.6) + 1e-3
   seed_vec = colSums(seed_matrix)
   seed_mats <- list()
   
@@ -193,7 +193,7 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
   # cond = F
   
   for (j in 1:23) {
-    # print(j)
+    if(cond) print(j)
     {
       
       Onsets_mat = Onsets_mat_list[[j]]
@@ -214,10 +214,17 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
       probs <- lapply(Onsets, function(Onset) Onset / rowSums(do.call(cbind, Onsets)))
       seed_matrix <- matrix(0, nrow=n, ncol=length(seed_vec))
       
-      for (i in 1:n) {
-        seed_matrix[i,] <- seed_vec * probs[[i]]
+
+      if(ifsimu){
+        seed_matrix = sapply(1:length(seed_vec), function(x){
+          rmultinom(1, ceiling(seed_vec[x]), c(probs[[1]][x],1-probs[[1]][x]))
+        })
+      }else{
+        for (i in 1:n) {
+          seed_matrix[i,] <- seed_vec * probs[[i]]
+        }
       }
-      
+
       # Create seed_matrices for each variant
       seed_mats <- list()
       
@@ -288,6 +295,9 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
     
     Onsets_mat_list[[j+1]] = Onsets_mat
   }
+  if(cond){
+    return(fitlist)
+  }
   
   dfplot_simu = data.frame()
   for (i in 1:24) {
@@ -320,6 +330,7 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
   
   return(data)
 }
+fitlist = determinant_fun(cond = T, ifsimu  = F, n_simu = n_simu)
 save(fitlist, file = 'AB.rdata')
 load('AB.rdata')
 df2_list = list()
@@ -454,7 +465,7 @@ poolday = 30
 parsmat$date = poolday*(parsmat$Tcycle-1) + as.Date('2019-12-31') + 1
 df = parsmat[parsmat$group != 'contact', ]
 df$date = as.Date(df$date)
-pd = 8
+pd = 0
 
 medians <- df %>%
   group_by(date, group) %>%
