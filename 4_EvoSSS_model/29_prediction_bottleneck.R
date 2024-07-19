@@ -115,8 +115,6 @@ simu <- function(seed_mat_I1, seed_mat_I2, N, poolday,
 }
 
 
-
-
 determinant_fun = function(ifsimu  = T, n_simu = 1,
                            m, h, k_capacity, f){
   
