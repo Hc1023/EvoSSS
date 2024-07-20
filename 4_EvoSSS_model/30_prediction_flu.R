@@ -81,16 +81,17 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
   n = 3
   poolday = 30
   nday = 100
-  
   seed_matrix <- matrix(0, nrow=n, ncol=poolday)
   seed_matrix[,1] = rep(3,3)
+  if(ifsimu){
+    seed_matrix[,1] = rmultinom(1, 9, rep(1/3,3))
+  }
   seed_vec = colSums(seed_matrix)
   seed_mats <- list()
   
   for (i in 1:n) {
     seed_mats[[i]] <- diag(seed_matrix[i,])
   }
-  
   
   if(cond){
     stan_data <- list(
@@ -129,43 +130,42 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
   Onsets_mat = simu(seed_mats, 
                     N = seed_vec * pars_last[1] + 1, 
                     poolday, pars = pars_last[-1], n)
-  fonset = data.frame(x = rep(1:nday,3), 
-                      y = c(Onsets_mat[1:nday,1],
-                            Onsets_mat[1:nday,2],
-                            Onsets_mat[1:nday,3]),
-                      group = factor(rep(voc, each = nday), 
-                                     levels = voc))
-  
-  tmp = fonset %>% group_by(group) %>% 
-    summarise(y = sum(y)) %>% 
-    data.frame()
-  tmp$x = c(55,60,65)
-  
-  observed_df = data.frame(y = unlist(observed_matrix[1,]))
-  
-  observed_df$x = c(25,30,35)
-  observed_df$group = voc
-  observed_df = rbind(observed_df, tmp)
-
-  ggplot() +
-    geom_line(data = fonset,
-              aes(x = x, y = y, 
-                  group = group, color = group))+
-   geom_col(data = observed_df, 
-                aes(x = x, y = y/30, 
-                    group = group, 
-                    color = group, fill = group), 
-                width = 5)
-  
+  if(!ifsimu){
+    fonset = data.frame(x = rep(1:nday,3), 
+                        y = c(Onsets_mat[1:nday,1],
+                              Onsets_mat[1:nday,2],
+                              Onsets_mat[1:nday,3]),
+                        group = factor(rep(voc, each = nday), 
+                                       levels = voc))
+    
+    tmp = fonset %>% group_by(group) %>% 
+      summarise(y = sum(y)) %>% 
+      data.frame()
+    tmp$x = c(55,60,65)
+    
+    observed_df = data.frame(y = unlist(observed_matrix[1,]))
+    
+    observed_df$x = c(25,30,35)
+    observed_df$group = voc
+    observed_df = rbind(observed_df, tmp)
+    
+    ggplot() +
+      geom_line(data = fonset,
+                aes(x = x, y = y, 
+                    group = group, color = group))+
+      geom_col(data = observed_df, 
+               aes(x = x, y = y/30, 
+                   group = group, 
+                   color = group, fill = group), 
+               width = 5)
+    
+  }
   
   Onsets_mat_list[[1]] = Onsets_mat
-  # cond = T
-  # cond = F
   
-  for (j in 1:35) {
+  for (j in 1:34) {
     # print(j)
     {
-      
       Onsets_mat = Onsets_mat_list[[j]]
       
       # Generalized extraction of Onset columns for all variants
@@ -182,15 +182,13 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
       
       # Calculate probabilities for each variant
       probs <- lapply(Onsets, function(Onset) Onset / rowSums(do.call(cbind, Onsets)))
+
       seed_matrix <- matrix(0, nrow=n, ncol=length(seed_vec))
-      
       for (i in 1:n) {
         seed_matrix[i,] <- seed_vec * probs[[i]]
       }
-      
       # Create seed_matrices for each variant
       seed_mats <- list()
-      
       
       for (i in 1:n) {
         seed_mats[[i]] <- diag(seed_matrix[i,])
@@ -230,41 +228,126 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
                         N = seed_vec * pars_last[1] + 1, 
                         poolday, pars = pars_last[-1], n)
       
-      fonset = data.frame(x = rep(1:nday,3), 
-                          y = c(Onsets_mat[1:nday,1],
-                                Onsets_mat[1:nday,2],
-                                Onsets_mat[1:nday,3]),
-                          group = factor(rep(voc, each = nday), 
-                                         levels = voc))
-      tmp = fonset %>% group_by(group) %>% 
-        summarise(y = sum(y)) %>% 
-        data.frame()
-      tmp$x = c(55,60,65)
-      
-      observed_df = data.frame(y = unlist(observed_matrix[j+1,]))
-      
-      observed_df$x = c(25,30,35)
-      observed_df$group = voc
-      observed_df = rbind(observed_df, tmp)
-      
-      
-      ggplot() +
-        geom_line(data = fonset,
-                  aes(x = x, y = y, 
-                      group = group, color = group))+
-        geom_col(data = observed_df, 
-                 aes(x = x, y = y/50, 
-                     group = group, 
-                     color = group, fill = group), 
-                 width = 5)
+      if(!ifsimu){
+        fonset = data.frame(x = rep(1:nday,3), 
+                            y = c(Onsets_mat[1:nday,1],
+                                  Onsets_mat[1:nday,2],
+                                  Onsets_mat[1:nday,3]),
+                            group = factor(rep(voc, each = nday), 
+                                           levels = voc))
+        
+        
+        tmp = fonset %>% group_by(group) %>% 
+          summarise(y = sum(y)) %>% 
+          data.frame()
+        tmp$x = c(55,60,65)
+        
+        observed_df = data.frame(y = unlist(observed_matrix[j+1,]))
+        
+        observed_df$x = c(25,30,35)
+        observed_df$group = voc
+        observed_df = rbind(observed_df, tmp)
+        
+        ggplot() +
+          geom_line(data = fonset,
+                    aes(x = x, y = y, 
+                        group = group, color = group))+
+          geom_col(data = observed_df, 
+                   aes(x = x, y = y/50, 
+                       group = group, 
+                       color = group, fill = group), 
+                   width = 5)
+      }
     }
-    
+    Onsets_mat_list[[j+1]] = Onsets_mat
+  }
+  
+  # j = 35 last simulation -- 24-July
+  
+  for (j in 35:46) {
+    # print(j)
+    {
+      Onsets_mat = Onsets_mat_list[[j]]
+      
+      # Generalized extraction of Onset columns for all variants
+      Onsets <- list()
+      for (i in 1:n) {
+        Onsets[[i]] <- Onsets_mat[poolday + 1:poolday, i] + 1e-3
+      }
+      # Mobility control force
+      mobility <- rep(1/30, 30) 
+      Mobility_matrix <- diag(mobility)
+      
+      # Create seed_vec considering all variants
+      seed_vec <- rowSums(sapply(Onsets, function(Onset) Onset)) %*% Mobility_matrix %>% as.numeric()
+      
+      # Calculate probabilities for each variant
+      probs <- lapply(Onsets, function(Onset) Onset / rowSums(do.call(cbind, Onsets)))
+      
+      seed_matrix <- matrix(0, nrow=n, ncol=length(seed_vec))
+      for (i in 1:n) {
+        seed_matrix[i,] <- seed_vec * probs[[i]]
+      }
+      # Create seed_matrices for each variant
+      seed_mats <- list()
+      
+      for (i in 1:n) {
+        seed_mats[[i]] <- diag(seed_matrix[i,])
+      }
+      
+      fit = fitlist[[j+1-12]]
+      posterior = rstan::extract(fit)
+      pars_last = c(mean(posterior$contact), 
+                    mean(posterior$beta1),
+                    mean(posterior$beta2),
+                    mean(posterior$beta3))
+      if(ifsimu){
+        pars_last = c(posterior$contact[n_simu], 
+                      posterior$beta1[n_simu],
+                      posterior$beta2[n_simu], 
+                      posterior$beta3[n_simu])
+      }
+      Onsets_mat = simu(seed_mats, 
+                        N = seed_vec * pars_last[1] + 1, 
+                        poolday, pars = pars_last[-1], n)
+      
+      if(!ifsimu){
+        fonset = data.frame(x = rep(1:nday,3), 
+                            y = c(Onsets_mat[1:nday,1],
+                                  Onsets_mat[1:nday,2],
+                                  Onsets_mat[1:nday,3]),
+                            group = factor(rep(voc, each = nday), 
+                                           levels = voc))
+        
+        
+        tmp = fonset %>% group_by(group) %>% 
+          summarise(y = sum(y)) %>% 
+          data.frame()
+        tmp$x = c(55,60,65)
+        
+        observed_df = data.frame(y = unlist(observed_matrix[j+1,]))
+        
+        observed_df$x = c(25,30,35)
+        observed_df$group = voc
+        observed_df = rbind(observed_df, tmp)
+        
+        ggplot() +
+          geom_line(data = fonset,
+                    aes(x = x, y = y, 
+                        group = group, color = group))+
+          geom_col(data = observed_df, 
+                   aes(x = x, y = y/50, 
+                       group = group, 
+                       color = group, fill = group), 
+                   width = 5)
+      }
+    }
     Onsets_mat_list[[j+1]] = Onsets_mat
   }
   
   # save(fitlist, Onsets_mat_list, file = 'flu.rdata')
   dfplot_simu = data.frame()
-  for (i in 1:36) {
+  for (i in 1:47) {
     Onsets_mat = Onsets_mat_list[[i]]
     k = i-1
     
@@ -281,7 +364,6 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
     summarise(y = sum(y)) %>%
     as.data.frame()
   
-  
   # Normalizing proportions for each date
   data <- df2 %>%
     group_by(x) %>%
@@ -291,83 +373,104 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
   levels = rev(unique(data$color))
   
   data$group = factor(data$color,levels = levels)
-  
+  if(ifsimu){
+    return(list(data, Onsets_mat_list))
+  }
   return(data)
 }
 
+dfob = data.frame(y = c(observed_matrix[,1],
+                        observed_matrix[,2],
+                        observed_matrix[,3]),
+                  x = rep(as.Date(rownames(observed_matrix)),
+                          3),
+                  group = rep(voc, each = nrow(observed_matrix)))
+
 df2_list = list()
+dfsimu2 = data.frame()
 for (n_simu in 1:100) {
   print(n_simu)
-  data = determinant_fun(cond = F, ifsimu  = T, n_simu = n_simu)
+  datalist = determinant_fun(cond = F, ifsimu  = T, n_simu = n_simu)
+  data = datalist[[1]]
   df2_list[[n_simu]] = data$y
+  Onsets_mat_list = datalist[[2]]
+  tmp = sapply(Onsets_mat_list, function(x){
+    colSums(x)
+  })
+  dfsimu = data.frame(y = c(tmp[1,],tmp[2,],tmp[3,]),
+                      group = rep(voc, each = length(Onsets_mat_list)),
+                      x = rep(dfob$x[1:length(Onsets_mat_list)], 3))
+  dfsimu2 = rbind(dfsimu2, dfsimu)
 }
 
 simu_Onset = data.frame(bind_cols(df2_list))
+if(F){
+  save(simu_Onset, dfsimu2, file = 'flu_plot.rdata')
+  load('flu_plot.rdata')
+}
+
+
 ci_lower <- apply(simu_Onset, 1, quantile, probs = 0.025, na.rm = T)
 ci_upper <- apply(simu_Onset, 1, quantile, probs = 0.975, na.rm = T)
 plot_data <- data.frame(
   x = data$x,
-  V = data$color,
-  # Observed = observed_cases,
+  group = data$color,
   Fitted = rowMeans(simu_Onset),
   LowerCI = ci_lower,
   UpperCI = ci_upper
 )
-plot_data$date = plot_data$x + as.Date('2020-06-30')
+
+values = c('#98afc7','#0041c2', '#a37ca1')
+
+plot_data$date = as.Date('2021-07-01') + plot_data$x
 plot_data$group = factor(plot_data$group, levels = voc)
-save(simu_Onset, plot_data, file = 'flu_plot.rdata')
-load('flu_plot.rdata')
-fexpect0 = data.frame(y = c(observed_matrix$v1,observed_matrix$v2,
-                            observed_matrix$v3),
-                      x = rep(1:nrow(observed_matrix),3),
-                      group = rep(flu, 
-                                  each = nrow(observed_matrix)))
-fexpect0$date = as.Date('2020-06-30') + fexpect0$x
-fexpect0$group = factor(fexpect0$group, levels = flu)
 
-library(RColorBrewer)
-brews = brewer.pal(n=4, name = "Spectral")
-values = c(brews[4:2])
-plot_data = plot_data[plot_data$x>1,]
 
+dfsimu3 = dfsimu2 %>% group_by(x, group) %>% 
+  summarise(ym = mean(y),
+            y1 = quantile(y, 0.025),
+            y2 = quantile(y, 0.975)) %>%
+  as.data.frame()
+
+dfsimu3$group = factor(dfsimu3$group, levels = voc)
+
+k = 30
+pd = 25
 p = ggplot() +
-  geom_point(data = fexpect0, 
-             aes(x = date, y = y, 
-                 group = group, color = group),
-             size = 0.4, shape = 16) +
-  geom_ribbon(data = plot_data, 
-              aes(x = date, group = group, 
-                  ymin = LowerCI, ymax = UpperCI, fill = group)) +  # Confidence interval
-  geom_line(data = plot_data, 
-            aes(x = date, y = Fitted, 
-                group = group, color = group), linewidth = 1) +
+  geom_col(data = dfob,
+           aes(x = x, y = y/k,
+               group = group, fill = group),
+           alpha = 0.8,
+           position = position_dodge(width = pd)) +
+  geom_ribbon(data = plot_data,
+              aes(x = date, group = group,
+                  ymin = LowerCI, ymax = UpperCI, fill = group)) +
+  geom_line(data = plot_data[plot_data$date < as.Date('2024-07-01'),], 
+            aes(x = date, y = Fitted, group = group, color= group)) +
+  geom_line(data = plot_data[plot_data$date >= as.Date('2024-07-01'),], 
+            aes(x = date, y = Fitted, group = group, color= group),
+            linetype = 'dashed') +
   scale_color_manual(name="",
                      values = alpha(values, 0.7)) +
   scale_fill_manual(name="",
                     values = alpha(values, 0.3)) +
-  scale_y_continuous(trans='log10') +
-  coord_cartesian(ylim = c(2,max(plot_data$Fitted))) +
-  labs(x = "Date", y = "Proportion") +
   theme_bw() +
   theme(legend.position = "right",
         plot.title = element_text(hjust = 0.5)) +
-  scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="6 months"),
-               minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-11-01'), by ='1 month'),
-               date_labels = "%y-%b", expand = c(0, 0)) +
-  scale_y_continuous(trans='log10', 
-                     breaks = c(1,10,100,1000,10000),
-                     labels = c(expression(10^0),expression(10^1),
-                                expression(10^2), expression(10^3),
-                                expression(10^4))) +
-  xlab('') + ylab('Cases') + 
-  coord_cartesian(xlim = c(as.Date('2020-07-01'), as.Date('2021-10-31')),
-                  ylim = c(1,2*10^4)) +
-  theme(legend.position = c(0.2,0.85),
-        legend.background = element_rect(color = NA, fill = NA),
-        legend.key = element_blank(),
-        legend.key.size = unit(0.2, units = 'cm'))
+  scale_x_date(breaks = seq(as.Date('2021-01-01'), as.Date('2025-05-01'), by="6 months"),
+               minor_breaks = seq(as.Date('2021-01-01'), as.Date('2025-05-01'), by ='1 month'),
+               date_labels = "%y-%b",
+               expand = c(0,0)) +
+  xlab('') + ylab('Cases / Monthly average') + 
+  # scale_y_continuous(breaks = c(0,100,200,300),
+  #                    sec.axis = sec_axis(
+  #                      transform = ~ .*k, 
+  #                      name = 'Monthly count')
+  # ) + 
+  coord_cartesian(xlim = c(as.Date('2021-09-01'), as.Date('2025-05-31')),
+                  ylim = c(1,max(plot_data$UpperCI)))
 
-pdf(paste0("Output/flu_plot.pdf"), width = 2.5, height = 1.8)
+pdf(paste0("Output/flu_plot.pdf"), width = 5, height = 1.8)
 print(p)
 dev.off()
 
@@ -383,12 +486,12 @@ p2 =  ggplot() +
             position = 'fill') +
   scale_fill_manual(name="", breaks = rev(levels(plot_data2$group)),
                     values = alpha(values, 1)) +
-  coord_cartesian(xlim = c(as.Date('2020-07-01'), as.Date('2021-10-31')),
-                  ylim = c(0,1)) +
-  scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2024-11-01'), by="6 months"),
-               minor_breaks = seq(as.Date('2019-12-01'), as.Date('2024-11-01'), by ='1 month'),
+  coord_cartesian(xlim = c(as.Date('2021-09-01'), as.Date('2024-05-31')),
+                  ylim = c(0,1)) + 
+  scale_x_date(breaks = seq(as.Date('2021-01-01'), as.Date('2025-05-01'), by="6 months"),
+               minor_breaks = seq(as.Date('2021-01-01'), as.Date('2025-05-01'), by ='1 month'),
                date_labels = "%y-%b",
-               expand = c(0, 0)) +
+               expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0,1,0.5), expand = c(0, 0)) +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -399,7 +502,7 @@ p2 =  ggplot() +
         legend.key.size = unit(0.4, units = 'cm')) +
   xlab('') + ylab('Prevalence') 
 
-pdf(paste0("Output/flu_plot_prevalence.pdf"), width = 2.5, height = 1.2)
+pdf(paste0("Output/flu_plot_prevalence.pdf"), width = 3.2, height = 1.6)
 print(p2)
 dev.off()
 
@@ -422,7 +525,7 @@ for (i in 1:length(fitlist)) {
 }
 
 poolday = 30
-parsmat$date = poolday*(parsmat$Tcycle-1) + as.Date('2020-06-30') + 1
+parsmat$date = poolday*(parsmat$Tcycle-1) + as.Date('2021-07-01') 
 df = parsmat[parsmat$group != 'contact', ]
 df$date = as.Date(df$date)
 pd = 8
@@ -465,18 +568,19 @@ p3 = ggplot() +
             aes(x = date + pd, y = median_y), 
             color = values[3], 
             linewidth = 0.4) +
-  coord_cartesian(xlim = c(as.Date('2020-07-01'), 
-                           as.Date('2021-10-31')),
-                  ylim = c(0.2,0.4)) +
-  scale_y_continuous(breaks = c(0.2,0.3,0.4)) +
+  coord_cartesian(xlim = c(as.Date('2021-09-01'), 
+                           as.Date('2024-05-31')),
+                  ylim = c(0.24,0.37)) +
+  scale_y_continuous(breaks = c(0.25,0.3,0.35)) +
   theme_bw() + xlab('') + ylab(expression(beta))
-pdf(paste0("Output/voc3_plot_beta.pdf"), width = 2.5, height = 1.2)
+pdf(paste0("Output/flu_plot_beta.pdf"), width = 3.3, height = 1.2)
 print(p3)
 dev.off()
 
 
 
 if(F){
+  data = determinant_fun(cond = F, ifsimu  = T, n_simu = n_simu)
   data$date = as.Date('2021-07-01') + data$x
   dfob = data.frame(y = c(observed_matrix[,1],
                           observed_matrix[,2],
