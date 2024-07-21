@@ -480,10 +480,21 @@ plot_data2 <- plot_data %>%
   as.data.frame()
 plot_data2$group = factor(plot_data2$group, 
                           levels = rev(levels(plot_data$group)))
+
+
+df = read.csv('influenza.csv')
+df2 = data.frame(x = as.Date(rep(df$X, 2)),
+  y = c(observed_matrix$v1/rowSums(observed_matrix), 
+        (observed_matrix$v1 + observed_matrix$v2)/rowSums(observed_matrix)),
+  group = rep(voc[1:2], each = nrow(df)))
 p2 =  ggplot() +
   geom_area(data = plot_data2, 
             aes(x = date, y = p, fill = group),
             position = 'fill') +
+  geom_point(data = df2,
+            aes(x = x, y = y, group = group, color = group)) + 
+  geom_line(data = df2,
+            aes(x = x, y = y, group = group, color = group)) + 
   scale_fill_manual(name="", breaks = rev(levels(plot_data2$group)),
                     values = alpha(values, 1)) +
   coord_cartesian(xlim = c(as.Date('2021-09-01'), as.Date('2024-05-31')),
@@ -501,7 +512,7 @@ p2 =  ggplot() +
         legend.key = element_blank(),
         legend.key.size = unit(0.4, units = 'cm')) +
   xlab('') + ylab('Prevalence') 
-
+p2
 pdf(paste0("Output/flu_plot_prevalence.pdf"), width = 3.2, height = 1.6)
 print(p2)
 dev.off()
