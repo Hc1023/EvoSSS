@@ -106,25 +106,28 @@ getplot = function(param_sets){
 
 # Parameter sets for multiple simulations
 param_sets <- expand.grid(r1 = 0.2, 
-                          r2 = 0.2 + c(0.02, 0.05, 0.1, 0.2), 
-                          K = 5000, alpha12 = 1, alpha21 = 0, mu = 0)
+                          r2 = 0.2 + c(0.02, 0.04, 0.1, 0.2), 
+                          K = 200, alpha12 = 1, alpha21 = 0, mu = 0)
 
 plist0 = getplot(param_sets)
+plist0[[2]]
 
 param_sets <- expand.grid(r1 = 0.2, 
-                          r2 = 0.2 + c(0.02, 0.05, 0.1, 0.2), 
-                          K = 5000, alpha12 = 2, alpha21 = 0, mu = 0)
+                          r2 = 0.2 + c(0.02, 0.04, 0.1, 0.2), 
+                          K = 200, alpha12 = 2, alpha21 = 0, mu = 0)
 
 plist1 = getplot(param_sets)
-param_sets <- expand.grid(r1 = 0.4, 
-                          r2 = 0.4 + c(0.02, 0.05, 0.1, 0.2), 
-                          K = 5000, alpha12 = 2, alpha21 = 0, mu = 0)
+plist1[[2]]
+param_sets <- expand.grid(r1 = 0.3, 
+                          r2 = 0.3 + c(0.02, 0.04, 0.1, 0.2), 
+                          K = 200, alpha12 = 1, alpha21 = 0, mu = 0)
 plist2 = getplot(param_sets)
-
-param_sets <- expand.grid(r1 = 0.4, 
-                          r2 = 0.4 + c(0.02, 0.05, 0.1, 0.2), 
-                          K = 5000, alpha12 = 4, alpha21 = 0, mu = 0)
+plist2[[2]]
+param_sets <- expand.grid(r1 = 0.3, 
+                          r2 = 0.3 + c(0.02, 0.04, 0.1, 0.2), 
+                          K = 200, alpha12 = 2, alpha21 = 0, mu = 0)
 plist3 = getplot(param_sets)
+plist3[[2]]
 pdf(paste0("Output/withinhost_competition.pdf"), width = 1.6, height = 1.2)
 print(plist0[[1]])
 print(plist0[[2]])
