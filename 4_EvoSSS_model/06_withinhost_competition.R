@@ -164,9 +164,21 @@ p1 = ggplot(data_ratio, aes(x = time, y = ratio, color = factor(group))) +
                      minor_breaks = seq(0 , 1, 0.25),
                      n.breaks = 3)
 
-
-p1
+p2 = ggplot(data_ratio, aes(x = time, y = ratio, color = factor(group))) +
+  geom_line() +
+  geom_point() +
+  scale_color_manual(values = values[-1], 
+                     name = expression(r[2]-r[1])) +
+  labs(y = "", x = "Time unit", color = "r2 value") +
+  theme_bw() +
+  theme(legend.position = "right",
+        legend.key.size = unit(0.4,'cm')) +
+  scale_x_continuous(breaks = c(0,24,48,72)) + 
+  scale_y_continuous(limits = c(0, 1), 
+                     minor_breaks = seq(0 , 1, 0.25),
+                     n.breaks = 3)
 
 pdf(paste0("Output/withinhost_competition_legend.pdf"), width = 3, height = 1.5)
 print(p1)
+print(p2)
 dev.off()

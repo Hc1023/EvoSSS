@@ -82,11 +82,14 @@ p <- ggtree(Ttree, #mrsd = maxdate,
   scale_fill_manual(name="Pangolin",
                     values=alpha(values2, alpha = 0.9)) + 
   # guides(shape = guide_legend(order = 2), fill = guide_legend(order = 1)) +
-  theme(axis.title=element_text(size=12),
-        axis.text=element_text(size=10),
+  theme(axis.title=element_text(size=14),
+        axis.text=element_text(size=12),
         legend.key.size = unit(0.3, 'cm'),
-        legend.spacing = unit(0.001, 'cm'),
-        legend.position = c(0.7,0.5),
+        legend.spacing = unit(0.0001, 'cm'),
+        legend.position = 'right',
+        plot.background = element_blank(),
+        strip.background = element_blank(),
+        panel.background = element_blank(),
         # legend.title = element_text(size=14),
         # legend.text = element_text(size=12),
         legend.background = element_blank(),
@@ -94,7 +97,7 @@ p <- ggtree(Ttree, #mrsd = maxdate,
         legend.key = element_blank()
   ) +
   guides(fill = guide_legend(override.aes = list(size=2),
-                             ncol = 4)) +
+                             ncol = 2)) +
   coord_cartesian(ylim = c(-5, 650)) +
   geom_text(data = data.frame(x = c(0.16,
                                     0.015,0.07,0.14,
@@ -122,7 +125,7 @@ p <- ggtree(Ttree, #mrsd = maxdate,
 p
 
 
-pdf(file = 'Output/tree_A.pdf', width = 4.2, height = 4)
+pdf(file = 'Output/tree_A.pdf', width = 6, height = 2.4)
 print(p)
 dev.off()
 

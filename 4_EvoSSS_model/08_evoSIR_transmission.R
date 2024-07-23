@@ -65,92 +65,90 @@ posterior_samples <- rstan::extract(fit)
 c = posterior_samples$beta1/posterior_samples$beta2
 deltar = -log(c)
 
-group = c(0.02,0.05,0.1,0.2)
-param_sets <- expand.grid(r1 = 0.2, 
-                          r2 = 0.2 + group, 
-                          K = 5000, 
-                          alpha12 = 2, 
-                          alpha21 = 0, 
-                          mu = 0,
-                          V1 = 1, V2 = 1)
-param_sets['group'] = group
-
-long_data_list = list()
-data_ratio_list = list()
-
-for (i in 1:10) {
-  combined_results = withinhost_fun(param_sets)
-  long_data = transform_data(combined_results)
-  data_ratio = ratio_fun(combined_results)
-  long_data_list[[i]] = long_data
-  data_ratio_list[[i]] = data_ratio
-  param_sets$V1= data_ratio$ratio[data_ratio == 24]*2
-  param_sets$V2= (1-data_ratio$ratio[data_ratio == 24])*2
-}
 
 
-data_ratio_combined = data.frame()
-long_data_combined = data.frame()
-for (i in 1:10) {
-  data_ratio = data_ratio_list[[i]] 
-  y = data_ratio[data_ratio$time <= 24,]
-  y$time = (i-1)*24+y$time
-  data_ratio_combined = rbind(data_ratio_combined, y)
+
+h_function = function(h){
+  long_data_list = list()
+  data_ratio_list = list()
+  group = c(0.02,0.04,0.1,0.2)
+  param_sets <- expand.grid(r1 = 0.2, 
+                            r2 = 0.2 + group, 
+                            K = 200, 
+                            alpha12 = 1, 
+                            alpha21 = 0, 
+                            mu = 0,
+                            V1 = 1, V2 = 1)
+  param_sets['group'] = group
+  for (i in 1:20) {
+    combined_results = withinhost_fun(param_sets)
+    long_data = transform_data(combined_results)
+    data_ratio = ratio_fun(combined_results)
+    long_data_list[[i]] = long_data
+    data_ratio_list[[i]] = data_ratio
+    param_sets$V1= data_ratio$ratio[data_ratio == h]*2
+    param_sets$V2= (1-data_ratio$ratio[data_ratio ==h])*2
+  }
   
-  long_data = long_data_list[[i]]
-  y = long_data[long_data$time <= 24,]
-  y$time = (i-1)*24+y$time
-  long_data_combined = rbind(long_data_combined, y)
+  data_ratio_combined = data.frame()
+  long_data_combined = data.frame()
+  for (i in 1:20) {
+    data_ratio = data_ratio_list[[i]] 
+    y = data_ratio[data_ratio$time <= h,]
+    y$time = (i-1)*h+y$time
+    data_ratio_combined = rbind(data_ratio_combined, y)
+    
+    long_data = long_data_list[[i]]
+    y = long_data[long_data$time <= h,]
+    y$time = (i-1)*h+y$time
+    long_data_combined = rbind(long_data_combined, y)
+  }
+  return(list(data_ratio_combined, long_data_list))
 }
 
-v = hue_pal()(3)[1]
-values1 = c(alpha(v, 0.9), alpha(v, 0.6), 
-            alpha(v, 0.4), alpha(v, 0.2))
-v = hue_pal()(3)[3]
-values2 = c(alpha(v, 0.9), alpha(v, 0.6), 
-            alpha(v, 0.4), alpha(v, 0.2))
-v = '#2A41AF'
-values = c(alpha(v, 0.9), alpha(v, 0.6), 
-           alpha(v, 0.4), alpha(v, 0.2))
+getplot1 = function(data_ratio_combined, h){
+  values = c(alpha('#6A619F',0.9), alpha('#2A419F',0.8), 
+             alpha('#4A71BF',0.7), alpha('#9AC1FF',0.7))
+  breaks = c(h*c(0,1,2,3,5,10,20))
+  p = ggplot() +
+    geom_line(data = data_ratio_combined[data_ratio_combined$time %in% breaks,], 
+              aes(x = time, y = ratio, color = factor(group))) +
+    geom_point(data = data_ratio_combined[data_ratio_combined$time %in% breaks,], 
+               aes(x = time, y = ratio, color = factor(group))) +
+    scale_color_manual(values = values, 
+                       name = expression(r[2]-r[1])) +
+    labs(y = expression('Ratio of V'['1']), x = "Transmission cycle") +
+    theme_bw() +
+    theme(legend.position = 'right',
+          legend.background = element_rect(color = NA, fill = NA),
+          legend.key = element_blank(),
+          legend.key.height = unit(0.2, 'cm'),
+          legend.key.width = unit(0.5, 'cm'),
+          panel.grid.minor = element_blank())+
+    scale_x_continuous(breaks = breaks,
+                       labels = breaks/h) + 
+    scale_y_continuous(n.breaks = 3)
+  p
+  return(p)
+}
+h_vec = c(12,24,48)
+results1 = h_function(h_vec[1])
+results2 = h_function(h_vec[2])
+results3 = h_function(h_vec[3])
 
+p1 = getplot1(results1[[1]], h_vec[1])
+p2 = getplot1(results2[[1]], h_vec[2])
+p3 = getplot1(results3[[1]], h_vec[3])
 
-values = c(alpha('#6A619F',0.9), alpha('#2A419F',0.8), 
-           alpha('#4A71BF',0.7), alpha('#9AC1FF',0.7))
-p = ggplot() +
-  # geom_point(data = long_data_combined,
-  #           aes(x = time, y = Population_label,
-  #               group = interaction(group, Strain),
-  #               color = interaction(group, Strain)),
-  #           size = 0.2) +
-  # scale_color_manual(values = c(values1, values2)) +
-  # new_scale_color() + 
-  geom_line(data = data_ratio_combined[data_ratio_combined$time %in% seq(0,24*10,24),], 
-            aes(x = time, y = ratio, color = factor(group))) +
-  geom_point(data = data_ratio_combined[data_ratio_combined$time %in% seq(0,24*10,24),], 
-             aes(x = time, y = ratio, color = factor(group))) +
-  scale_color_manual(values = values, 
-                     name = '') +
-  labs(y = expression('Ratio of V'['1']), x = "Transmission cycle") +
-  theme_bw() +
-  theme(legend.position = c(0.8,0.65),
-        legend.background = element_rect(color = NA, fill = NA),
-        legend.key = element_blank(),
-        legend.key.height = unit(0.2, 'cm'),
-        legend.key.width = unit(0.5, 'cm'))+
-  scale_x_continuous(breaks = seq(0,24*10,24),
-                     labels = 0:10) + 
-  scale_y_continuous(limits = c(0, 0.5), 
-                     breaks = c(0,0.25,0.5))
-
-p
-pdf(paste0("Output/withinhost_transmission.pdf"), width = 2.5, height = 1.5)
-print(p)
+pdf(paste0("Output/withinhost_transmission.pdf"), 
+    width = 3, height = 1.5)
+print(p1)
+print(p2)
+print(p3)
 dev.off()
 
 
-getplot = function(long_data){
-
-
+getplot2 = function(long_data){
   # Plotting
   p1 = ggplot(long_data, aes(x = time, y = Population_label)) +
     geom_line(data = long_data[long_data$Strain == 'V1',], 
@@ -171,11 +169,12 @@ getplot = function(long_data){
   return(p1)
 }
 
+long_data_list = results1[[2]]
 
 pdf("Output/withinhost_transmission_2.pdf", 
     width = 1.5, height = 1)
 for(i in c(1,2,5,10)){
-  print(getplot(long_data_list[[i]]))
+  print(getplot2(long_data_list[[i]]))
 }
 dev.off()
 

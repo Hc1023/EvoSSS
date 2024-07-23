@@ -81,7 +81,7 @@ getplot = function(combined_results){
   return(p)
 }
 
-Kbase = 100000
+Kbase = 200
 mu = 10^(-6)
 mu_vec = c(10^(-12), 10^(-9), 10^(-6), 10^(-3))
 r = 0.2

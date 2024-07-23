@@ -59,6 +59,7 @@ ratio_fun = function(combined_results){
 }
 # Parameters
 load(file = 'evoSIR.rdata')
+
 fit = fitlist[[4]]
 posterior_samples <- rstan::extract(fit)
 
@@ -66,7 +67,7 @@ c = posterior_samples$beta1/posterior_samples$beta2
 deltar = -log(c)
 
 
-n = 5000
+n = 50
 seed = 20
 pA = 0.25
 
@@ -74,11 +75,11 @@ getdf = function(n, seed, pA){
   pA_vec = rep(pA, n)
   seed_vec = rpois(n,seed)
   seed_vec = seed_vec[seed_vec>0]
-  group = c(0.02,0.05,0.1,0.2)
+  group = c(0.02,0.04,0.1,0.2)
   params = c(r1 = 0.2, 
              r2 = 0.2 + group[2], 
-             K = seed*2500, 
-             alpha12 = 2, 
+             K = 200*seed, 
+             alpha12 = 1, 
              alpha21 = 0, 
              mu = 0)
   state_vec = sapply(1:length(seed_vec), function(x){
@@ -108,13 +109,13 @@ getdf = function(n, seed, pA){
 
 if(F){
   df1 = getdf(n = 5000, seed = 20, pA = 0.3)
-  df2 = getdf(n = 5000, seed = 5, pA = 0.3)
+  df2 = getdf(n = 5000, seed = 3, pA = 0.3)
   
   save(df1, df2, file = 'evoSIR_bottleneck.rdata')
 }
 
 load('evoSIR_bottleneck.rdata')
-getplot = function(df, p0){
+getplot = function(df, p0 = 0.3){
 
   means <- df %>%
     group_by(time) %>%
@@ -128,9 +129,7 @@ getplot = function(df, p0){
     geom_vline(xintercept = p0, color = 'black', 
                linetype = "dashed") +
     ylab('') + xlab('') +
-    scale_y_continuous(breaks = c(0:3),
-                       labels = 0:3,
-                       limits = c(0,3.8)) +
+    scale_y_continuous(n.breaks = 3) +
     scale_x_continuous(breaks = seq(0,1,0.5),
                        limits = c(0,1)) +
     theme_bw() +
