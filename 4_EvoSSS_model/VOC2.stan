@@ -64,6 +64,7 @@ data {
   matrix[poolday, poolday] seed_mat_I2;
   vector[poolday] seed_vec;
   real<lower = 0> gamma;
+  vector[3] pars_last;
 }
 
 parameters {
@@ -88,9 +89,9 @@ model {
   }
 
   // Priors
-  contact ~ normal(200, 10);
-  beta1 ~ normal(0.3, 0.01);
-  beta2 ~ normal(0.3, 0.01);
+  contact ~ normal(pars_last[1], 10);
+  beta1 ~ normal(pars_last[2], 0.01);
+  beta2 ~ normal(pars_last[3], 0.01);
 
 }
 

@@ -5,6 +5,7 @@ library(scales)
 library(ggnewscale)
 library(tidyverse)
 library(dplyr)
+library(RColorBrewer)
 
 
 df = read.csv('../3_Epidemiological_analysis/VOC_gisaid.csv')
@@ -107,7 +108,7 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
   nday = 100
   
   # Create a dataframe with all dates
-  d0 <- expand.grid(date = as.Date('2020-12-29') + 0:2, 
+  d0 <- expand.grid(date = as.Date('2020-12-20') + 0:10, 
                     V = unique(df$V))
   d1 <- d0 %>%
     left_join(df, by = c("date", "V")) %>%
@@ -117,7 +118,7 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
   
   seed_matrix <- matrix(0, nrow=n, ncol=poolday)
   seed_matrix[,1] = c(d1[d1$V == 'Non Omicron','m'],
-                      d1[d1$V == 'Omicron','m']) + 1e-3
+                      d1[d1$V == 'Omicron','m']) + 1e-1
   seed_vec = colSums(seed_matrix)
   seed_mats <- list()
   
@@ -139,62 +140,66 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
       seed_mat_I1 = seed_mats[[1]],
       seed_mat_I2 = seed_mats[[2]],
       seed_vec = seed_vec,
-      gamma = 0.157
+      gamma = 0.157,
+      pars_last = c(200,0.3,0.3)
     )
     # Fit the model
     fit <- stan(file = 'VOC2.stan', data = stan_data, 
-                iter = 2500, chains = 1, warmup = 2000,
+                iter = 3000, chains = 1, warmup = 2000,
                 verbose = TRUE)
     fitlist[[1]] = fit
   }
-  
-  
-  
-  fexpect = data.frame(x = rep(1:nday,2), 
-                       y = c(expected_matrix[1:nday,1],
-                             expected_matrix[1:nday,2]),
-                       group = factor(rep(c('Non Omicron','Omicron'), 
-                                          each = nday),
-                                      levels = c('Non Omicron','Omicron')))
-  
   
   Onsets_mat_list = list()
   fit= fitlist[[1]]
   
   posterior = rstan::extract(fit)
   
-  pars_last = c(mean(posterior$contact), 
-                mean(posterior$beta1),
-                mean(posterior$beta2))
+  if(!ifsimu){
+    fexpect = data.frame(x = rep(1:nday,2), 
+                         y = c(expected_matrix[1:nday,1],
+                               expected_matrix[1:nday,2]),
+                         group = factor(rep(c('Non Omicron','Omicron'), 
+                                            each = nday),
+                                        levels = c('Non Omicron','Omicron')))
+    pars_last = c(mean(posterior$contact), 
+                  mean(posterior$beta1),
+                  mean(posterior$beta2))
+    Onsets_mat = simu(seed_mats, 
+                      N = seed_vec * pars_last[1] + 1, 
+                      poolday, pars = pars_last[-1], n)
+    fonset = data.frame(x = rep(1:nday,2), 
+                        y = c(Onsets_mat[1:nday,1],
+                              Onsets_mat[1:nday,2]),
+                        group = factor(rep(c('Non Omicron','Omicron'), 
+                                           each = nday),
+                                       levels = c('Non Omicron','Omicron')))
+    
+    
+    ggplot() +
+      geom_point(data = fexpect, 
+                 aes(x = x, y = y, group = group, color = group)) +
+      geom_line(data = fonset,
+                aes(x = x, y = y, group = group, color = group))
+    
+    
+  }
+  
   if(ifsimu){
     pars_last = c(posterior$contact[n_simu], 
                   posterior$beta1[n_simu],
                   posterior$beta2[n_simu])
+    Onsets_mat = simu(seed_mats, 
+                      N = seed_vec * pars_last[1] + 1, 
+                      poolday, pars = pars_last[-1], n)
   }
-  Onsets_mat = simu(seed_mats, 
-                    N = seed_vec * pars_last[1] + 1, 
-                    poolday, pars = pars_last[-1], n)
-  fonset = data.frame(x = rep(1:nday,2), 
-                      y = c(Onsets_mat[1:nday,1],
-                            Onsets_mat[1:nday,2]),
-                      group = factor(rep(c('Non Omicron','Omicron'), 
-                                         each = nday),
-                                     levels = c('Non Omicron','Omicron')))
-  
-  
-  ggplot() +
-    geom_point(data = fexpect, 
-               aes(x = x, y = y, group = group, color = group)) +
-    geom_line(data = fonset,
-              aes(x = x, y = y, group = group, color = group))
-  
-  
+
   Onsets_mat_list[[1]] = Onsets_mat
   # cond = T
   # cond = F
   
   for (j in 1:20) {
-    # print(j)
+    if(cond) print(j)
     {
       
       Onsets_mat = Onsets_mat_list[[j]]
@@ -202,7 +207,7 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
       # Generalized extraction of Onset columns for all variants
       Onsets <- list()
       for (i in 1:n) {
-        Onsets[[i]] <- Onsets_mat[poolday + 1:poolday, i] + 1e-3
+        Onsets[[i]] <- Onsets_mat[poolday + 1:poolday, i] + 1e-1
       }
       # Mobility control force
       mobility <- rep(1/30, 30) 
@@ -215,8 +220,15 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
       probs <- lapply(Onsets, function(Onset) Onset / rowSums(do.call(cbind, Onsets)))
       seed_matrix <- matrix(0, nrow=n, ncol=length(seed_vec))
       
-      for (i in 1:n) {
-        seed_matrix[i,] <- seed_vec * probs[[i]]
+      if(ifsimu & min(max(Onsets[[1]]), max(Onsets[[2]])) > 0.5){
+      
+        seed_matrix = sapply(1:length(seed_vec), function(x){
+          rmultinom(1, ceiling(seed_vec[x]), c(probs[[1]][x],1-probs[[1]][x]))
+        })
+      }else{
+        for (i in 1:n) {
+          seed_matrix[i,] <- seed_vec * probs[[i]]
+        }
       }
       
       # Create seed_matrices for each variant
@@ -239,7 +251,6 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
                                           levels = c('Non Omicron','Omicron')))
       
       if(cond){
-        fit = fitlist[[j]]
         stan_data <- list(
           poolday = poolday,
           nday = nday,
@@ -247,11 +258,12 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
           seed_mat_I1 = seed_mats[[1]],
           seed_mat_I2 = seed_mats[[2]],
           seed_vec = seed_vec,
-          gamma = 0.157
+          gamma = 0.157,
+          pars_last = pars_last
         )
         # Fit the model
         fit <- stan(file = 'VOC2.stan', data = stan_data, 
-                    iter = 2500, chains = 1, warmup = 2000,
+                    iter = 3000, chains = 1, warmup = 2000,
                     verbose = TRUE)
         fitlist[[j+1]] = fit
       }
@@ -260,30 +272,37 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
       fit = fitlist[[j+1]]
       posterior = rstan::extract(fit)
       
-      pars_last = c(mean(posterior$contact), 
-                    mean(posterior$beta1),
-                    mean(posterior$beta2))
+      if(!ifsimu){
+        pars_last = c(mean(posterior$contact), 
+                      mean(posterior$beta1),
+                      mean(posterior$beta2))
+        Onsets_mat = simu(seed_mats, 
+                          N = seed_vec * pars_last[1] + 1, 
+                          poolday, pars = pars_last[-1], n)
+        fonset = data.frame(x = rep(1:nday,2), 
+                            y = c(Onsets_mat[1:nday,1],
+                                  Onsets_mat[1:nday,2]),
+                            group = factor(rep(c('Non Omicron','Omicron'), 
+                                               each = nday),
+                                           levels = c('Non Omicron','Omicron')))
+        
+        ggplot() +
+          geom_point(data = fexpect, 
+                     aes(x = x, y = y, group = group, color = group)) +
+          geom_line(data = fonset,
+                    aes(x = x, y = y, group = group, color = group)) 
+        
+        
+      }
+      
       if(ifsimu){
         pars_last = c(posterior$contact[n_simu], 
                       posterior$beta1[n_simu],
                       posterior$beta2[n_simu])
+        Onsets_mat = simu(seed_mats, 
+                          N = seed_vec * pars_last[1] + 1, 
+                          poolday, pars = pars_last[-1], n)
       }
-      Onsets_mat = simu(seed_mats, 
-                        N = seed_vec * pars_last[1] + 1, 
-                        poolday, pars = pars_last[-1], n)
-      
-      fonset = data.frame(x = rep(1:nday,2), 
-                          y = c(Onsets_mat[1:nday,1],
-                                Onsets_mat[1:nday,2]),
-                          group = factor(rep(c('Non Omicron','Omicron'), 
-                                             each = nday),
-                                         levels = c('Non Omicron','Omicron')))
-      
-      ggplot() +
-        geom_point(data = fexpect, 
-                   aes(x = x, y = y, group = group, color = group)) +
-        geom_line(data = fonset,
-                  aes(x = x, y = y, group = group, color = group)) 
       
     }
     
@@ -323,14 +342,24 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
   return(data)
 }
 
-load('voc2.rdata')
+fexpect0 = data.frame(y = c(observed_matrix$v1,observed_matrix$v2),
+                      x = rep(1:nrow(observed_matrix),2),
+                      group = rep(c('Non Omicron', 'Omicron'), 
+                                  each = nrow(observed_matrix)))
+fexpect0$date = as.Date('2020-12-31') + fexpect0$x
+fexpect0$group = factor(fexpect0$group, levels = c('Non Omicron','Omicron'))
+if(F){
+  save(fitlist, file = 'voc2.rdata')
+  load('voc2.rdata')
+}
+
 df2_list = list()
 for (n_simu in 1:100) {
   print(n_simu)
   data = determinant_fun(cond = F, ifsimu  = T, n_simu = n_simu)
   df2_list[[n_simu]] = data$y
 }
-
+{
 simu_Onset = data.frame(bind_cols(df2_list))
 ci_lower <- apply(simu_Onset, 1, quantile, probs = 0.025, na.rm = T)
 ci_upper <- apply(simu_Onset, 1, quantile, probs = 0.975, na.rm = T)
@@ -346,22 +375,13 @@ plot_data$date = plot_data$x + as.Date('2020-12-31')
 plot_data$group = 'Non Omicron'
 plot_data$group[data$color == '2'] = 'Omicron'
 plot_data$group = factor(plot_data$group, levels = c('Non Omicron','Omicron'))
-save(simu_Onset, plot_data, file = 'voc2_plot.rdata')
-load('voc2_plot.rdata')
-
-
-fexpect0 = data.frame(y = c(observed_matrix$v1,observed_matrix$v2),
-                      x = rep(1:nrow(observed_matrix),2),
-                      group = rep(c('Non Omicron', 'Omicron'), 
-                                  each = nrow(observed_matrix)))
-fexpect0$date = as.Date('2020-12-31') + fexpect0$x
-fexpect0$group = factor(fexpect0$group, levels = c('Non Omicron','Omicron'))
-
-library(RColorBrewer)
+if(F){
+  save(plot_data, file = 'voc2_plot.rdata')
+  load('voc2_plot.rdata')
+}
 
 values = brewer.pal(n=4, name = "Spectral")[1:2]
 values = rev(c(values[1], '#41424c'))
-show_col(values)
 plot_data = plot_data[plot_data$x>1,]
 
 p = ggplot() +
@@ -383,8 +403,6 @@ p = ggplot() +
   coord_cartesian(ylim = c(2,max(plot_data$Fitted))) +
   labs(x = "Date", y = "Proportion") +
   theme_bw() +
-  theme(legend.position = "right",
-        plot.title = element_text(hjust = 0.5)) +
   scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="6 months"),
                minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-05-01'), by ='1 month'),
                date_labels = "%y-%b", expand = c(0, 0)) +
@@ -396,11 +414,13 @@ p = ggplot() +
   xlab('') + ylab('Cases') + 
   coord_cartesian(xlim = c(as.Date('2021-01-01'), as.Date('2022-08-01')),
                   ylim = c(1,4*10^4)) +
-  theme(legend.position = c(0.28,0.45),
+  theme(legend.position = 'none',
         legend.background = element_rect(color = NA, fill = NA),
         legend.key = element_blank(),
-        legend.key.size = unit(0.2, units = 'cm'))
-
+        legend.key.size = unit(0.2, units = 'cm'),
+        panel.grid.minor = element_blank())
+}
+p
 pdf(paste0("Output/voc2_plot.pdf"), width = 2.5, height = 1.8)
 print(p)
 dev.off()
@@ -499,7 +519,9 @@ p3 = ggplot() +
             linewidth = 0.4) +
   coord_cartesian(xlim = c(as.Date('2021-01-01'), as.Date('2022-08-01'))) +
   scale_y_continuous(breaks = c(0.1,0.3,0.5,0.7)) +
-  theme_bw() + xlab('') + ylab(expression(beta))
+  theme_bw() + xlab('') + ylab(expression(beta)) + 
+  theme(panel.grid.minor = element_blank())
+
 pdf(paste0("Output/voc2_plot_beta.pdf"), width = 2.5, height = 1.2)
 print(p3)
 dev.off()
@@ -538,22 +560,7 @@ if(F){
     xlab('') + ylab('Cases') + 
     coord_cartesian(xlim = c(as.Date('2021-2-05'), as.Date('2022-10-01')),
                     ylim = c(1,2*10^4))
-  
-  data$group = factor(data$group, levels = c('Delta','Alpha','D614G'))
-  
-  
-  ggplot() +
-    geom_area(data = data, 
-              aes(x = date, y = p, fill = group),
-              position = 'fill') +
-    coord_cartesian(xlim = c(as.Date('2020-06-30'), as.Date('2021-10-31')),
-                    ylim = c(0,1)) +
-    scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2024-11-01'), by="6 months"),
-                 minor_breaks = seq(as.Date('2019-12-01'), as.Date('2024-11-01'), by ='1 month'),
-                 date_labels = "%y-%b",
-                 expand = c(0, 0)) +
-    scale_y_continuous(breaks = seq(0,1,0.5), expand = c(0, 0))
-  
+
   parsmat = data.frame()
   for (i in 1:length(fitlist)) {
     posterior = rstan::extract(fitlist[[i]])

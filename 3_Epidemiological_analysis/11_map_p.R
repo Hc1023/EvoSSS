@@ -53,7 +53,7 @@ p = ggplot()+
             inherit.aes = FALSE) +
   xlab('') + ylab('')
 p
-pdf(file = 'Output/map_p.pdf', width = 4, height = 1.8)
+pdf(file = 'Output/map_p.pdf', width = 3.2, height = 1.6)
 print(p)
 dev.off()
 

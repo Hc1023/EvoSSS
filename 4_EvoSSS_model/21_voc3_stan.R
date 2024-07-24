@@ -118,7 +118,7 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
   seed_matrix <- matrix(0, nrow=n, ncol=poolday)
   seed_matrix[,1] = c(d1[d1$V == 'D614G','m'],
                       d1[d1$V == 'Alpha','m'],
-                      d1[d1$V == 'Delta','m']) + 1e-3
+                      d1[d1$V == 'Delta','m']) + 1e-1
   seed_vec = colSums(seed_matrix)
   seed_mats <- list()
   
@@ -141,11 +141,12 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
       seed_mat_I2 = seed_mats[[2]],
       seed_mat_I3 = seed_mats[[3]],
       seed_vec = seed_vec,
-      gamma = 0.157
+      gamma = 0.157, 
+      pars_last = c(200, 0.3, 0.3, 0.3)
     )
     # Fit the model
     fit <- stan(file = 'VOC3.stan', data = stan_data, 
-                iter = 2500, chains = 1, warmup = 2000,
+                iter = 3000, chains = 1, warmup = 2000,
                 verbose = TRUE)
     fitlist[[1]] = fit
   }
@@ -166,41 +167,49 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
   
   posterior = rstan::extract(fit)
   
-  pars_last = c(mean(posterior$contact), 
-                mean(posterior$beta1),
-                mean(posterior$beta2), 
-                mean(posterior$beta3))
+  if(!ifsimu){
+    pars_last = c(mean(posterior$contact), 
+                  mean(posterior$beta1),
+                  mean(posterior$beta2), 
+                  mean(posterior$beta3))
+    Onsets_mat = simu(seed_mats, 
+                      N = seed_vec * pars_last[1] + 1, 
+                      poolday, pars = pars_last[-1], n)
+    fonset = data.frame(x = rep(1:nday,3), 
+                        y = c(Onsets_mat[1:nday,1],
+                              Onsets_mat[1:nday,2],
+                              Onsets_mat[1:nday,3]),
+                        group = factor(rep(c('D614G','Alpha','Delta'), 
+                                           each = nday), 
+                                       levels = c('D614G','Alpha','Delta')))
+    
+    ggplot() +
+      geom_point(data = fexpect, 
+                 aes(x = x, y = y, group = group, color = group)) +
+      geom_line(data = fonset,
+                aes(x = x, y = y, group = group, color = group))
+    
+    
+  }
+
   if(ifsimu){
     pars_last = c(posterior$contact[n_simu], 
                   posterior$beta1[n_simu],
                   posterior$beta2[n_simu], 
                   posterior$beta3[n_simu])
+    Onsets_mat = simu(seed_mats, 
+                      N = seed_vec * pars_last[1] + 1, 
+                      poolday, pars = pars_last[-1], n)
   }
-  Onsets_mat = simu(seed_mats, 
-                    N = seed_vec * pars_last[1] + 1, 
-                    poolday, pars = pars_last[-1], n)
-  fonset = data.frame(x = rep(1:nday,3), 
-                      y = c(Onsets_mat[1:nday,1],
-                            Onsets_mat[1:nday,2],
-                            Onsets_mat[1:nday,3]),
-                      group = factor(rep(c('D614G','Alpha','Delta'), 
-                                         each = nday), 
-                                     levels = c('D614G','Alpha','Delta')))
-  
-  
-  ggplot() +
-    geom_point(data = fexpect, 
-               aes(x = x, y = y, group = group, color = group)) +
-    geom_line(data = fonset,
-              aes(x = x, y = y, group = group, color = group))
-  
-  
+
+
+
   Onsets_mat_list[[1]] = Onsets_mat
   # cond = T
   # cond = F
   
   for (j in 1:20) {
-    # print(j)
+    if(cond) print(j)
     {
       
       Onsets_mat = Onsets_mat_list[[j]]
@@ -208,7 +217,7 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
       # Generalized extraction of Onset columns for all variants
       Onsets <- list()
       for (i in 1:n) {
-        Onsets[[i]] <- Onsets_mat[poolday + 1:poolday, i] + 1e-3
+        Onsets[[i]] <- Onsets_mat[poolday + 1:poolday, i] + 1e-1
       }
       # Mobility control force
       mobility <- rep(1/30, 30) 
@@ -219,10 +228,15 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
       
       # Calculate probabilities for each variant
       probs <- lapply(Onsets, function(Onset) Onset / rowSums(do.call(cbind, Onsets)))
-      seed_matrix <- matrix(0, nrow=n, ncol=length(seed_vec))
-      
-      for (i in 1:n) {
-        seed_matrix[i,] <- seed_vec * probs[[i]]
+     if(ifsimu & min(max(Onsets[[1]]), max(Onsets[[2]]), max(Onsets[[3]])) > 10){
+        seed_matrix = sapply(1:length(seed_vec), function(x){
+          rmultinom(1, ceiling(seed_vec[x]), c(probs[[1]][x],probs[[2]][x],1-probs[[1]][x]-probs[[2]][x]))
+        })
+      }else{
+        seed_matrix <- matrix(0, nrow=n, ncol=length(seed_vec))
+        for (i in 1:n) {
+          seed_matrix[i,] <- seed_vec * probs[[i]]
+        }
       }
 
       # Create seed_matrices for each variant
@@ -246,7 +260,6 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
                                           levels = c('D614G','Alpha','Delta')))
       
       if(cond){
-        fit = fitlist[[j]]
         stan_data <- list(
           poolday = poolday,
           nday = nday,
@@ -255,11 +268,12 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
           seed_mat_I2 = seed_mats[[2]],
           seed_mat_I3 = seed_mats[[3]],
           seed_vec = seed_vec,
-          gamma = 0.157
+          gamma = 0.157,
+          pars_last = pars_last
         )
         # Fit the model
         fit <- stan(file = 'VOC3.stan', data = stan_data, 
-                    iter = 2500, chains = 1, warmup = 2000,
+                    iter = 3000, chains = 1, warmup = 2000,
                     verbose = TRUE)
         fitlist[[j+1]] = fit
       }
@@ -268,34 +282,41 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
       fit = fitlist[[j+1]]
       posterior = rstan::extract(fit)
       
-      pars_last = c(mean(posterior$contact), 
-                    mean(posterior$beta1),
-                    mean(posterior$beta2),
-                    mean(posterior$beta3))
+      if(!ifsimu){
+        pars_last = c(mean(posterior$contact), 
+                      mean(posterior$beta1),
+                      mean(posterior$beta2),
+                      mean(posterior$beta3))
+        Onsets_mat = simu(seed_mats, 
+                          N = seed_vec * pars_last[1] + 1, 
+                          poolday, pars = pars_last[-1], n)
+        
+        fonset = data.frame(x = rep(1:nday,3), 
+                            y = c(Onsets_mat[1:nday,1],
+                                  Onsets_mat[1:nday,2],
+                                  Onsets_mat[1:nday,3]),
+                            group = factor(rep(c('D614G','Alpha','Delta'), 
+                                               each = nday), 
+                                           levels = c('D614G','Alpha','Delta')))
+        
+        ggplot() +
+          geom_point(data = fexpect, 
+                     aes(x = x, y = y, group = group, color = group)) +
+          geom_line(data = fonset,
+                    aes(x = x, y = y, group = group, color = group)) 
+        
+      }
+
       if(ifsimu){
         pars_last = c(posterior$contact[n_simu], 
                       posterior$beta1[n_simu],
                       posterior$beta2[n_simu], 
                       posterior$beta3[n_simu])
+        Onsets_mat = simu(seed_mats, 
+                          N = seed_vec * pars_last[1] + 1, 
+                          poolday, pars = pars_last[-1], n)
       }
-      Onsets_mat = simu(seed_mats, 
-                        N = seed_vec * pars_last[1] + 1, 
-                        poolday, pars = pars_last[-1], n)
-      
-      fonset = data.frame(x = rep(1:nday,3), 
-                          y = c(Onsets_mat[1:nday,1],
-                                Onsets_mat[1:nday,2],
-                                Onsets_mat[1:nday,3]),
-                          group = factor(rep(c('D614G','Alpha','Delta'), 
-                                             each = nday), 
-                                         levels = c('D614G','Alpha','Delta')))
-      
-      ggplot() +
-        geom_point(data = fexpect, 
-                   aes(x = x, y = y, group = group, color = group)) +
-        geom_line(data = fonset,
-                  aes(x = x, y = y, group = group, color = group)) 
-      
+
     }
     
     Onsets_mat_list[[j+1]] = Onsets_mat
@@ -333,6 +354,9 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
   
   return(data)
 }
+if(F){
+  save(fitlist, file = 'voc3.rdata')
+}
 
 df2_list = list()
 for (n_simu in 1:100) {
@@ -357,8 +381,11 @@ plot_data$group = 'D614G'
 plot_data$group[data$color == '2'] = 'Alpha'
 plot_data$group[data$color == '3'] = 'Delta'
 plot_data$group = factor(plot_data$group, levels = c('D614G','Alpha','Delta'))
-save(simu_Onset, plot_data, file = 'voc3_plot.rdata')
-load('voc3_plot.rdata')
+if(F){
+  save(plot_data, file = 'voc3_plot.rdata')
+  load('voc3_plot.rdata')
+}
+
 fexpect0 = data.frame(y = c(observed_matrix$v1,observed_matrix$v2,
                             observed_matrix$v3),
                       x = rep(1:nrow(observed_matrix),3),
@@ -391,8 +418,6 @@ p = ggplot() +
   coord_cartesian(ylim = c(2,max(plot_data$Fitted))) +
   labs(x = "Date", y = "Proportion") +
   theme_bw() +
-  theme(legend.position = "right",
-        plot.title = element_text(hjust = 0.5)) +
   scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="6 months"),
                minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-11-01'), by ='1 month'),
                date_labels = "%y-%b", expand = c(0, 0)) +
@@ -402,13 +427,14 @@ p = ggplot() +
                                 expression(10^2), expression(10^3),
                                 expression(10^4))) +
   xlab('') + ylab('Cases') + 
-  coord_cartesian(xlim = c(as.Date('2020-07-01'), as.Date('2021-10-31')),
+  coord_cartesian(xlim = c(as.Date('2020-07-01'), as.Date('2021-10-1')),
                   ylim = c(1,2*10^4)) +
-  theme(legend.position = c(0.2,0.85),
+  theme(legend.position = 'none',
         legend.background = element_rect(color = NA, fill = NA),
         legend.key = element_blank(),
-        legend.key.size = unit(0.2, units = 'cm'))
-
+        legend.key.size = unit(0.2, units = 'cm'),
+        panel.grid.minor = element_blank())
+p
 pdf(paste0("Output/voc3_plot.pdf"), width = 2.5, height = 1.8)
 print(p)
 dev.off()
@@ -440,7 +466,7 @@ p2 =  ggplot() +
         legend.key = element_blank(),
         legend.key.size = unit(0.4, units = 'cm')) +
   xlab('') + ylab('Prevalence') 
-
+p2
 pdf(paste0("Output/voc3_plot_prevalence.pdf"), width = 2.5, height = 1.2)
 print(p2)
 dev.off()
@@ -511,7 +537,9 @@ p3 = ggplot() +
                            as.Date('2021-10-31')),
                   ylim = c(0.2,0.4)) +
   scale_y_continuous(breaks = c(0.2,0.3,0.4)) +
-  theme_bw() + xlab('') + ylab(expression(beta))
+  theme_bw() + xlab('') + ylab(expression(beta)) +
+  theme(panel.grid.minor = element_blank())
+p3
 pdf(paste0("Output/voc3_plot_beta.pdf"), width = 2.5, height = 1.2)
 print(p3)
 dev.off()

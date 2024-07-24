@@ -66,7 +66,7 @@ maxdate = as.Date(max(c(metadata$date,metadata2$date)))
 
 p <- ggtree(Ttree, #mrsd = maxdate, 
             as.Date = T, 
-            aes(color = group), size = 0.3) %>% 
+            aes(color = group), size = 0.5) %>% 
   collapse(node=2306) %<+%
   sample_dat + #theme_tree2() +
   scale_color_manual(name="Clades",
@@ -78,15 +78,17 @@ p <- ggtree(Ttree, #mrsd = maxdate,
                inherit.aes = F) +
   new_scale_color() + 
   new_scale_fill() +
-  geom_tippoint(mapping = aes(fill = lineage), size = 3, shape=21) +
-  scale_fill_manual(name="Pangolin",
+  geom_tippoint(mapping = aes(fill = lineage), 
+                size = 5, shape=21) +
+  scale_fill_manual(name="",
                     values=alpha(values2, alpha = 0.9)) + 
   # guides(shape = guide_legend(order = 2), fill = guide_legend(order = 1)) +
   theme(axis.title=element_text(size=14),
         axis.text=element_text(size=12),
-        legend.key.size = unit(0.3, 'cm'),
+        legend.key.size = unit(0.2, 'cm'),
+        # legend.text = element_text(size = 10),
         legend.spacing = unit(0.0001, 'cm'),
-        legend.position = 'right',
+        legend.position = c(0.7,0.55),
         plot.background = element_blank(),
         strip.background = element_blank(),
         panel.background = element_blank(),
@@ -97,7 +99,7 @@ p <- ggtree(Ttree, #mrsd = maxdate,
         legend.key = element_blank()
   ) +
   guides(fill = guide_legend(override.aes = list(size=2),
-                             ncol = 2)) +
+                             ncol = 4)) +
   coord_cartesian(ylim = c(-5, 650)) +
   geom_text(data = data.frame(x = c(0.16,
                                     0.015,0.07,0.14,
@@ -125,7 +127,7 @@ p <- ggtree(Ttree, #mrsd = maxdate,
 p
 
 
-pdf(file = 'Output/tree_A.pdf', width = 6, height = 2.4)
+pdf(file = 'Output/tree_A.pdf', width = 4.4, height = 3)
 print(p)
 dev.off()
 
