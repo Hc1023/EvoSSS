@@ -437,6 +437,7 @@ plotfun2 = function(plot_data1){
   plot_data_pred = plot_data1[plot_data1$date >= as.Date('2020-01-01') + 90, ]
   values = c(hue_pal()(3)[1], hue_pal()(3)[3])
   values2 = c('#a70107', '#06068d')
+  values2 = values
   # maxy = max(max(fexpect0$y[fexpect0$date < as.Date('2020-01-01') + 8*30]), 
   #            max(plot_data1$UpperCI[plot_data1$date <  as.Date('2020-01-01') + 8*30]))
   p = ggplot() +
@@ -470,8 +471,8 @@ plotfun2 = function(plot_data1){
     geom_line(data = plot_data_pred, 
               aes(x = date, y = Fitted, 
                   group = group, color = group),
-              # linetype = 'dashed',
-              linewidth = 0.6) +
+              linetype = 'dashed',
+              linewidth = 1) +
     scale_color_manual(name="",
                        values = alpha(values2, 0.7),
                        breaks = names(values2)) +
@@ -496,7 +497,7 @@ plotfun2 = function(plot_data1){
           legend.key = element_blank(),
           legend.key.size = unit(0.2, units = 'cm'),
           legend.key.width = unit(1, units = 'cm'))
-  
+  p
   return(p)
 }
 
@@ -512,10 +513,13 @@ plot_data3 = getplot(m = 1/2000, h = 2, n = 500,
 
 save(plot_data1, plot_data2, plot_data3,
      file = 'mobility.rdata')
+load(file = 'mobility.rdata')
 p1 = plotfun2(plot_data1 = plot_data1)
+p1
 p2 = plotfun2(plot_data1 = plot_data2)
+p2
 p3 = plotfun2(plot_data1 = plot_data3)
-
+p3
 pdf(paste0("Output/prediction_mobility.pdf"), 
     width = 2, height = 1.8)
 print(p1)

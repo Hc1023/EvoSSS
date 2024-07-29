@@ -260,20 +260,6 @@ determinant_fun = function(ifsimu  = T, n_simu = 1,
                         N = seed_vec * pars_last[1] + 1, 
                         poolday, pars = pars_last[-1],
                         f = update_fun)
-      
-      fonset = data.frame(x = rep(1:nday,2), 
-                          y = c(Onsets_mat[1:nday,1],
-                                Onsets_mat[1:nday,2]),
-                          group = factor(rep(c('Non Omicron','Omicron'), 
-                                             each = nday),
-                                         levels = c('Non Omicron','Omicron')))
-      
-      ggplot() +
-        geom_point(data = fexpect, 
-                   aes(x = x, y = y, group = group, color = group)) +
-        geom_line(data = fonset,
-                  aes(x = x, y = y, group = group, color = group)) 
-      
     }
     
     Onsets_mat_list[[j+1]] = Onsets_mat
@@ -445,7 +431,7 @@ plotfun = function(plot_data1){
   plot_data = plot_data1[plot_data1$date <= as.Date('2020-01-01') + 90, ]
   plot_data_pred = plot_data1[plot_data1$date >= as.Date('2020-01-01') + 90, ]
   values = c(hue_pal()(3)[1], hue_pal()(3)[3])
-  values2 = c('#a70107', '#06068d')
+  values2 = c('#d43f3b','#0041c2')
   # maxy = max(max(fexpect0$y[fexpect0$date < as.Date('2020-01-01') + 8*30]), 
   #            max(plot_data1$UpperCI[plot_data1$date <  as.Date('2020-01-01') + 8*30]))
   p = ggplot() +
@@ -479,8 +465,8 @@ plotfun = function(plot_data1){
     geom_line(data = plot_data_pred, 
               aes(x = date, y = Fitted, 
                   group = group, color = group),
-              # linetype = 'dashed',
-              linewidth = 0.6) +
+              linetype = 'dashed',
+              linewidth = 1) +
     scale_color_manual(name="",
                        values = alpha(values2, 0.7),
                        breaks = names(values2)) +
@@ -505,21 +491,24 @@ plotfun = function(plot_data1){
           legend.key = element_blank(),
           legend.key.size = unit(0.2, units = 'cm'),
           legend.key.width = unit(1, units = 'cm'))
-
   return(p)
 }
 
-plot_data1 = getplot(m = 1/30, h = 30, n = 20, 
-                     k_capacity = 1, 
-                     f = update_fun_stochastic)
-plot_data2 = getplot(m = 1/30, h = 30, n = 20, 
-                     k_capacity = 1.5, 
-                     f = update_fun_stochastic)
-plot_data3 = getplot(m = 1/30, h = 30, n = 20, 
-                     k_capacity = 0.5, f = update_fun_stochastic)
 
-save(plot_data1, plot_data2, plot_data3, 
-     file = 'capacity.rdata')
+if(F){
+  plot_data1 = getplot(m = 1/30, h = 30, n = 500, 
+                       k_capacity = 1, 
+                       f = update_fun)
+  plot_data2 = getplot(m = 1/30, h = 30, n =500, 
+                       k_capacity = 1.5, 
+                       f = update_fun)
+  plot_data3 = getplot(m = 1/30, h = 30, n = 500, 
+                       k_capacity = 0.5, f = update_fun)
+  
+  save(plot_data1, plot_data2, plot_data3, 
+       file = 'capacity.rdata')
+  load(file = 'capacity.rdata')
+}
 
 
 p1 = plotfun(plot_data1 = plot_data1)
