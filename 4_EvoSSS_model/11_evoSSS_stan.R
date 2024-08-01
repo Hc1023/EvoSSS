@@ -268,9 +268,10 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1, require_dfplot_sim
   }
   return(data)
 }
-save(fitlist, file = 'AB_constant_beta.rdata')
-
-load('AB_constant_beta.rdata')
+if(F){
+  save(fitlist, file = 'AB_constant_beta.rdata')
+  load('AB_constant_beta.rdata')
+}
 
 dfplot_simu = determinant_fun(cond = F, ifsimu  = T, n_simu = 1, require_dfplot_simu = T)
 dfplot_simu$date = as.Date('2019-12-31') + dfplot_simu$x
@@ -510,27 +511,4 @@ if(F){
   
 }
 
-dfposterior = data.frame()
-for (i in 1:(length(fitlist)-1)) {
-  fit = fitlist[[i+1]]
-  posterior_samples = rstan::extract(fit)
-  
-  dfposterior[i,1] = i+1
-  dfposterior$contact_mean[i] = mean(posterior_samples$contact)
-  dfposterior$contact_q025[i] = quantile(posterior_samples$contact, 0.025)
-  dfposterior$contact_q975[i] = quantile(posterior_samples$contact, 0.975)
-  dfposterior$contact_text[i] = paste0(sprintf('%.3f', dfposterior$contact_mean[i]),' (',
-                            sprintf('%.3f',dfposterior$contact_q025[i]),' ~ ',
-                            sprintf('%.3f',dfposterior$contact_q975[i]),')')
-  dfposterior$mobility_mean[i] = mean(posterior_samples$mobility)
-  dfposterior$mobility_q025[i] = quantile(posterior_samples$mobility, 0.025)
-  dfposterior$mobility_q975[i] = quantile(posterior_samples$mobility, 0.975)
-  dfposterior$mobility_text[i] = paste0(sprintf('%.3f', dfposterior$mobility_mean[i]),' (',
-                               sprintf('%.3f',dfposterior$mobility_q025[i]),' ~ ',
-                               sprintf('%.3f',dfposterior$mobility_q975[i]),')')
-}
 
-if(F){
-  write.csv(dfposterior, file = 'Output/evoSSS_parameters.csv',
-            row.names = F)
-}

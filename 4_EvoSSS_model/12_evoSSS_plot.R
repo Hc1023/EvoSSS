@@ -190,10 +190,10 @@ determinant_fun = function(ifsimu  = T, n_simu = 1, require_dfplot_simu = F){
   return(data)
 }
 
-if(T){
+if(F){
   
   df2_list = list()
-  for (n_simu in 1:100) {
+  for (n_simu in 1:1000) {
     print(n_simu)
     data = determinant_fun(ifsimu  = T, n_simu = n_simu, require_dfplot_simu = F)
     df2_list[[n_simu]] = data$y
@@ -245,7 +245,7 @@ if(T){
   
   df$y1_log = log(df$y1)
   df$y1_transform = 100*df$y1
-  plot_data_sampling = plot_data
+
   load('../3_Epidemiological_analysis/growth_rate.rdata')
   df2 = plot_data[plot_data$Mutations == 'Lineage B',]
   df2 = na.omit(df2)
@@ -322,6 +322,43 @@ if(T){
   pdf(paste0("Output/evoSSS_stan_plot.pdf"), width = 4.5, height = 2)
   print(p)
   dev.off()
+  
+  # >   cor(df$capacity*df$mobility, df$gr)
+  # [1] 0.9890256
+  # >   cor(df$mobility, df$gr)
+  # [1] 0.6225894
+  # >   cor(df$capacity, df$gr)
+  # [1] 0.9222384
+  # cor(df$capacity*df$mobility, as.numeric(df$`Growth rate`))
+}
+
+if(F){
+  dfposterior = data.frame()
+  for (i in 1:(length(fitlist)-1)) {
+    fit = fitlist[[i+1]]
+    posterior_samples = rstan::extract(fit)
+    
+    dfposterior[i,1] = i+1
+    dfposterior$contact_mean[i] = mean(posterior_samples$contact)
+    dfposterior$contact_q025[i] = quantile(posterior_samples$contact, 0.025)
+    dfposterior$contact_q975[i] = quantile(posterior_samples$contact, 0.975)
+    dfposterior$contact_text[i] = paste0(sprintf('%.3f', dfposterior$contact_mean[i]),' (',
+                                         sprintf('%.3f',dfposterior$contact_q025[i]),' ~ ',
+                                         sprintf('%.3f',dfposterior$contact_q975[i]),')')
+    dfposterior$mobility_mean[i] = mean(posterior_samples$mobility)
+    dfposterior$mobility_q025[i] = quantile(posterior_samples$mobility, 0.025)
+    dfposterior$mobility_q975[i] = quantile(posterior_samples$mobility, 0.975)
+    dfposterior$mobility_text[i] = paste0(sprintf('%.3f', dfposterior$mobility_mean[i]),' (',
+                                          sprintf('%.3f',dfposterior$mobility_q025[i]),' ~ ',
+                                          sprintf('%.3f',dfposterior$mobility_q975[i]),')')
+  }
+  dfposterior$growth_rate = NA
+
+  for (i in 1:nrow(dfposterior)) {
+    dfposterior$growth_rate[i] = mean(df2$Fitted[df2$date_vector < df$date[i] + 30 & df2$date_vector >= df$date[i]])
+  }
+  write.csv(dfposterior, file = 'Output/evoSSS_parameters.csv',
+            row.names = F)
 }
 
 
@@ -412,7 +449,6 @@ if(F){
   p
   
 }
-
 
 
 
