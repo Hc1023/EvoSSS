@@ -7,6 +7,16 @@ library(scales)
 df = read.csv('Covid19CasesGISAID.csv')
 df$Var1 = as.Date(df$Var1)
 df$Mutations = factor(df$Mutations, levels = unique(df$Mutations))
+
+i = 2
+for (i in c(1,3,4)) {
+  c = cor(df$Freq[df$Mutations == unique(df$Mutations)[2]],
+          df$Freq[df$Mutations == unique(df$Mutations)[i]])
+  print(c)
+}
+# [1] -0.08236075
+# [1] 0.7396961
+# [1] 0.4516835
 values = c(hue_pal()(3)[1], hue_pal()(3)[3], hue_pal()(3)[2], hue_pal()(4)[4])
 
 anno = data.frame(x0 = as.Date(c('2020-8-10','2020-9-10','2020-10-29','2020-10-30','2021-9-1')),

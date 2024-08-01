@@ -195,6 +195,7 @@ for (j in 1:9) {
   posterior_samples = extract(fit)
 
   dfposterior[j,1] = j/10
+  ratio = j/10
   
   m = mean(posterior_samples$beta1)
   q1 = quantile(posterior_samples$beta1, 0.025)
@@ -232,10 +233,21 @@ for (j in 1:9) {
   dfposterior[j,6] = paste0(sprintf('%.3f',m),' (',
                             sprintf('%.3f',q1),' ~ ',
                             sprintf('%.3f',q2),')')
+  
+  I10 = round(34*ratio)
+  I20 = round(34*(1-ratio))
+  time_intro1 = log(I10)/(posterior_samples$beta1-posterior_samples$gamma) # - log(m)
+  time_intro2 = log(I20)/(posterior_samples$beta2-posterior_samples$gamma) # - log(m)
+  delta = time_intro1-time_intro2
+  ci_lower = quantile(delta, probs = 0.025, na.rm = T)
+  ci_upper = quantile(delta, probs = 0.975, na.rm = T)
+  dfposterior[j,7] = paste0(sprintf('%.3f',mean(delta)),' (',
+                            sprintf('%.3f',ci_lower),' ~ ',
+                            sprintf('%.3f',ci_upper),')')
 
 }
 
 colnames(dfposterior) = c('Ratio','beta1','beta2','gamma',
-                          'beta1/beta2','r2-r1')
+                          'beta1/beta2','r2-r1', 'd2-d1')
 write.csv(dfposterior, file = 'Output/acrosshost_parameters.csv',
           row.names = F)
