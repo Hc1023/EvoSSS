@@ -50,7 +50,7 @@ withinhost_fun = function(param_sets){
 transform_data = function(combined_results){
   # Transform data for plotting
   long_data <- pivot_longer(combined_results, cols = c("V1", "V2"), names_to = "Strain", values_to = "Population")
-  long_data$Population_label = long_data$Population/10^3
+  long_data$Population_label = long_data$Population/max(long_data$Population)
   long_data$group = long_data$r2 - long_data$r1
   long_data$group[long_data$Strain == 'V1'] = 'V1'
   long_data$group = factor(long_data$group, levels = unique(long_data$group))
@@ -111,7 +111,7 @@ param_sets <- expand.grid(r1 = 0.2,
 
 plist0 = getplot(param_sets)
 plist0[[2]]
-
+plist0[[1]]
 param_sets <- expand.grid(r1 = 0.2, 
                           r2 = 0.2 + c(0.02, 0.04, 0.1, 0.2), 
                           K = 200, alpha12 = 2, alpha21 = 0, mu = 0)
