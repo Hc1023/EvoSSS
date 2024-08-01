@@ -70,7 +70,7 @@ state <- c(V1 = 1, V2 = 1)
 times <- seq(0, 100, by = 1)
 params = c(r1 = r1, 
            r2 = r2, 
-           K = 2*median(df1[df1$timepoint == 72,'V']), 
+           K = 2*median(df1[df1$timepoint == 72,'V']),  # 297235.6
            alpha12 = 0, 
            alpha21 = 0, 
            mu = 0)
@@ -130,7 +130,7 @@ r2 = result2$coefficients[2,1]
 # Estimate   Std. Error      t value     Pr(>|t|) 
 # 3.397670e-01 2.035067e-02 1.669561e+01 4.344274e-19 
 
-K = 2*median(df1[df1$timepoint == 48,'V'])
+K = 2*median(df1[df1$timepoint == 48,'V']) # 47248.41
 params = c(r1 = r1, 
            r2 = r2, 
            K =  K, 
