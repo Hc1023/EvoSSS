@@ -62,7 +62,9 @@ getplot = function(combined_results){
   
   values = c(alpha('#6A619F',0.9), alpha('#2A419F',0.8), 
              alpha('#4A71BF',0.7), alpha('#9AC1FF',0.7))
-
+  values = c(alpha('#2A419F',0.8), alpha('#9AC1FF',0.7))
+  values = c(alpha('#6A619F',0.8), alpha('#AA712F',0.7))
+  # show_col(values)
   p = ggplot(data_ratio, 
              aes(x = time, y = ratio, 
                  color = factor(group))) +
@@ -80,44 +82,6 @@ getplot = function(combined_results){
 
   return(p)
 }
-
-Kbase = 200
-mu = 10^(-6)
-mu_vec = c(10^(-12), 10^(-9), 10^(-6), 10^(-3))
-r = 0.2
-param_sets1 <- expand.grid(r1 = r, r2 = r, K = 100000, 
-                          alpha12 = 0, alpha21 = 0, 
-                          mu = mu_vec)
-param_sets2 <- expand.grid(r1 = r, r2 = r, K = 100000, 
-                          alpha12 = 0, alpha21 = 1, 
-                          mu = mu_vec)
-param_sets3 <- expand.grid(r1 = r, r2 = r, K = 100000, 
-                          alpha12 = 1, alpha21 = 0, 
-                          mu = mu_vec)
-param_list = list(param_sets1, param_sets2, param_sets3)
-
-results_list1 = list()
-for (i in 1:3) {
-  results_list1[[i]] = withinhost_fun(param_list[[i]])
-}
-
-r = 0.4
-param_sets1 <- expand.grid(r1 = r, r2 = r, K = 100000, 
-                           alpha12 = 0, alpha21 = 0, 
-                           mu = mu_vec)
-param_sets2 <- expand.grid(r1 = r, r2 = r, K = 100000, 
-                           alpha12 = 0, alpha21 = 2, 
-                           mu = mu_vec)
-param_sets3 <- expand.grid(r1 = r, r2 = r, K = 100000, 
-                           alpha12 = 2, alpha21 = 0, 
-                           mu = mu_vec)
-param_list = list(param_sets1, param_sets2, param_sets3)
-
-results_list2 = list()
-for (i in 1:3) {
-  results_list2[[i]] = withinhost_fun(param_list[[i]])
-}
-
 transform_data = function(combined_results){
   # Transform data for plotting
   long_data <- pivot_longer(combined_results, cols = c("V1", "V2"), names_to = "Strain", values_to = "Population")
@@ -152,6 +116,112 @@ getplot2 = function(combined_results){
                        labels = c('0.0','0.5','1.0'))
   return(p)
 }
+
+Kbase = 200
+mu = 10^(-6)
+mu_vec = c(10^(-6), 10^(-3))
+r = 0.2
+param_sets1 <- expand.grid(r1 = r, r2 = r, K = 200, 
+                           alpha12 = 1, alpha21 = 1, 
+                           mu = mu_vec)
+param_sets2 <- expand.grid(r1 = r, r2 = r + 0.04, K = 200, 
+                          alpha12 = 1, alpha21 = 1, 
+                          mu = mu_vec)
+param_sets3 <- expand.grid(r1 = r, r2 = r + 0.4, K = 200, 
+                          alpha12 = 1, alpha21 = 1, 
+                          mu = mu_vec)
+param_sets4 <- expand.grid(r1 = r, r2 = r, K = 200, 
+                          alpha12 = 0, alpha21 = 1, 
+                          mu = mu_vec)
+
+pdf(paste0("Output/withinhost_evolution_mutation_rate.pdf"), width = 1.5, height = 1.2)
+print(getplot(withinhost_fun(param_sets1)))
+print(getplot(withinhost_fun(param_sets2)))
+print(getplot(withinhost_fun(param_sets3)))
+print(getplot(withinhost_fun(param_sets4)))
+print(getplot2(withinhost_fun(param_sets1)))
+print(getplot2(withinhost_fun(param_sets2)))
+print(getplot2(withinhost_fun(param_sets3)))
+print(getplot2(withinhost_fun(param_sets4)))
+dev.off()
+
+pdf(paste0("Output/withinhost_evolution_legend.pdf"), width = 3, height = 1.2)
+{
+  combined_results = withinhost_fun(param_sets1)
+  data_ratio = ratio_fun(combined_results)
+  data_ratio$group = factor(data_ratio$group,
+                            levels = as.character(format(mu_vec, digits = 2)))
+  
+  values = c(alpha('#6A619F',0.8), alpha('#AA712F',0.7))
+  # show_col(values)
+  p = ggplot(data_ratio, 
+             aes(x = time, y = ratio, 
+                 color = factor(group))) +
+    geom_line() +
+    geom_point() +
+    scale_color_manual(values = values,
+                       name = expression(mu)) +
+    labs(y = "", x = "Time unit", color = "r2 value") +
+    theme_bw() +
+    theme(legend.position = "top") +
+    scale_x_continuous(breaks = c(0,24,48,72)) +
+    scale_y_continuous(limits = c(0, 1),
+                       minor_breaks = seq(0 , 1, 0.25),
+                       n.breaks = 3)
+  print(p)
+}
+dev.off()
+
+param_sets2 <- expand.grid(r1 = r, r2 = r, K = 200, 
+                          alpha12 = 0, alpha21 = 0, 
+                          mu = mu_vec)
+param_sets3 <- expand.grid(r1 = r, r2 = r, K = 200, 
+                           alpha12 = 1, alpha21 = 0, 
+                           mu = mu_vec)
+
+
+
+
+r = 0.3
+param_sets2 <- expand.grid(r1 = r, r2 = r, K = 200, 
+                           alpha12 = 1, alpha21 = 1, 
+                           mu = mu_vec)
+results2 = withinhost_fun(param_sets2)
+getplot(results2)
+getplot2(results2)
+
+
+
+param_sets2 <- expand.grid(r1 = r, r2 = r, K = 100000, 
+                          alpha12 = 0, alpha21 = 1, 
+                          mu = mu_vec)
+param_sets3 <- expand.grid(r1 = r, r2 = r, K = 100000, 
+                          alpha12 = 1, alpha21 = 0, 
+                          mu = mu_vec)
+param_list = list(param_sets1, param_sets2, param_sets3)
+
+results_list1 = list()
+for (i in 1:3) {
+  results_list1[[i]] = withinhost_fun(param_list[[i]])
+}
+
+r = 0.4
+param_sets1 <- expand.grid(r1 = r, r2 = r, K = 100000, 
+                           alpha12 = 0, alpha21 = 0, 
+                           mu = mu_vec)
+param_sets2 <- expand.grid(r1 = r, r2 = r, K = 100000, 
+                           alpha12 = 0, alpha21 = 2, 
+                           mu = mu_vec)
+param_sets3 <- expand.grid(r1 = r, r2 = r, K = 100000, 
+                           alpha12 = 2, alpha21 = 0, 
+                           mu = mu_vec)
+param_list = list(param_sets1, param_sets2, param_sets3)
+
+results_list2 = list()
+for (i in 1:3) {
+  results_list2[[i]] = withinhost_fun(param_list[[i]])
+}
+
 
 pdf(paste0("Output/withinhost_evolution1.pdf"), width = 1.5, height = 1.2)
 results_list = results_list1

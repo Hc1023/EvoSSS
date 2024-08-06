@@ -8,115 +8,103 @@ library(ggnewscale)
 library(ggpubr)
 
 # Define the model
-viral_model <- function(t, state, parameters) {
+viral_model <- function(state, params) {
   V1 <- state[1]
   V2 <- state[2]
   
-  r1 <- parameters["r1"]
-  r2 <- parameters["r2"]
-  K <- parameters["K"]
-  alpha12 <- parameters["alpha12"]
-  alpha21 <- parameters["alpha21"]
-  mu <- parameters["mu"]
-  
+  r1 <- params["r1"]
+  r2 <- params["r2"]
+  K <- params["K"]
+  alpha12 <- params["alpha12"]
+  alpha21 <- params["alpha21"]
+  mu <- params["mu"]
 
-  dV1dt <- r1 * V1 * (1 - (V1 + alpha21 * V2) / K) - mu * V1
-  dV2dt <- r2 * V2 * (1 - (V2 + alpha12 * V1) / K) - mu * V1
+  dV1dt <- r1 * V1 * (1 - (V1 + alpha21 * V2) / K)
+  dV2dt <- r2 * V2 * (1 - (V2 + alpha12 * V1) / K)
+  dV1dt = max(0, dV1dt)
+  dV2dt = max(0, dV2dt)
+  total_change_rate <- dV1dt + dV2dt
+  if (total_change_rate > 0) {
+    pV1 <- dV1dt / total_change_rate
+    pV2 <- dV2dt / total_change_rate
+    # Multinomial sampling
+    size = floor(total_change_rate) + 
+      as.numeric(runif(1) < (total_change_rate - floor(total_change_rate)))
+    changes <- rmultinom(1, size = size, prob = c(pV1, pV2))
+    
+    # Update populations based on sampled changes
+    V1 <- V1 + changes[1] 
+    V2 <- V2 + changes[2]
+  }
   
-  return(list(c(dV1dt, dV2dt)))
+  return(c(V1, V2))
 }
 
-withinhost_fun = function(param_sets){
-  # Initial state and time sequence
-  # state <- c(V1 = 1, V2 = 1)
-  # Run simulations for each parameter set
-  results <- lapply(seq(nrow(param_sets)), function(i) {
-    params <- unlist(param_sets[i, ])
-    out <- ode(y = c(params['V1'],params['V2']), times = times, 
-               func = viral_model, parms = params)
-    out_df <- as.data.frame(out)
-    out_df$group <- params['group']
-    return(out_df)
+
+
+getdf = function(seed, params, n, p){
+  # Time points
+  times <- 1:48
+  selected_times = c(2, 8, 24, 48)
+  # Initial state
+  # n = 100; seed = 20; p = 0.5
+  seed_mat = rmultinom(n, seed, c(p,1-p))
+  V1_values <- numeric(length(times))
+  V2_values <- numeric(length(times))
+  p = sapply(1:n, function(j){
+    state = seed_mat[,j]
+    for (i in times) {
+      state <- viral_model(state, params)
+      V1_values[i] <- state[1]
+      V2_values[i] <- state[2]
+    }
+    p = V1_values[selected_times]/(V1_values[selected_times] + V2_values[selected_times])
+    return(p)
   })
-  combined_results = bind_rows(results)
-  
-  return(combined_results)
-  
+
+  df = data.frame(time = rep(selected_times, n),
+                  p = c(p))
+
+  return(df)
 }
 
-transform_data = function(combined_results){
-  long_data <- pivot_longer(combined_results, cols = c("V1", "V2"), 
-                            names_to = "Strain", values_to = "Population")
-  long_data$Population_label = long_data$Population/max(long_data$Population)
-  long_data$group = factor(long_data$group, levels = unique(long_data$group))
-  return(long_data) 
-}
-ratio_fun = function(combined_results){
-  data_ratio <- combined_results %>%
-    mutate(ratio = V1/(V1+V2), group = group) %>%
-    select(time, group, ratio)
-  return(data_ratio)
-}
-# Parameters
-load(file = 'evoSIR.rdata')
-
-fit = fitlist[[4]]
-posterior_samples <- rstan::extract(fit)
-
-c = posterior_samples$beta1/posterior_samples$beta2
-deltar = -log(c)
+seed = 3
 
 
-n = 50
-seed = 20
-pA = 0.25
+if(F){
 
-getdf = function(n, seed, pA){
-  pA_vec = rep(pA, n)
-  seed_vec = rpois(n,seed)
-  seed_vec = seed_vec[seed_vec>0]
-  group = c(0.02,0.04,0.1,0.2)
+  seed = 20
   params = c(r1 = 0.2, 
-             r2 = 0.2 + group[2], 
+             r2 = 0.24, 
              K = 200*seed, 
              alpha12 = 1, 
              alpha21 = 0, 
              mu = 0)
-  state_vec = sapply(1:length(seed_vec), function(x){
-    y = rmultinom(1, size = seed_vec[x], 
-                  prob = c(pA_vec[x], 1-pA_vec[x]))
-    return(matrix(y))
-  })
-  times = seq(0,48,2)
-  df = data.frame()
-  for (i in 1:length(seed_vec)) {
-    out <- ode(y = c(state_vec[1,i], state_vec[2,i]), 
-               times = times, func = viral_model, 
-               parms = params)
-    out = data.frame(out)
-    pdf = out[out$time %in% c(2,8,24,48),]
-    if(is.na(pdf$X1[1]/(pdf$X1[1]+pdf$X2[1]))){
-      return(state_vec[,i])
-      break
-    }
-    df = rbind(df, pdf)
-  }
-  
-  df$p = df$X1/(df$X1 + df$X2)
-  df$time = factor(df$time)
-  return(df)
+  df = getdf(seed = seed, params = params, n = 5000, p = 0.3)
+  df1 = df
+  seed = 6
+  params = c(r1 = 0.2, 
+             r2 = 0.24, 
+             K = 200*seed, 
+             alpha12 = 1, 
+             alpha21 = 0, 
+             mu = 0)
+  df = getdf(seed = seed, params = params, n = 5000, p = 0.3)
+  df2 = df
+  seed = 3
+  params = c(r1 = 0.2, 
+             r2 = 0.24, 
+             K = 200*seed, 
+             alpha12 = 1, 
+             alpha21 = 0, 
+             mu = 0)
+  df = getdf(seed = seed, params = params, n = 5000, p = 0.3)
+  df2 = df
+  save(df1, df2, df3, file = 'evoSIR_bottleneck.rdata')
 }
-
-if(F){
-  df1 = getdf(n = 5000, seed = 20, pA = 0.3)
-  df2 = getdf(n = 5000, seed = 3, pA = 0.3)
-  
-  save(df1, df2, file = 'evoSIR_bottleneck.rdata')
-}
-
 load('evoSIR_bottleneck.rdata')
-getplot = function(df, p0 = 0.3){
-
+plotfun = function(df){
+  df$time = factor(df$time)
   means <- df %>%
     group_by(time) %>%
     summarize(mean_p = mean(p, na.rm = T))
@@ -126,17 +114,64 @@ getplot = function(df, p0 = 0.3){
     geom_density(alpha = 0.3, bw = 0.1) +
     geom_vline(data = means, aes(xintercept = mean_p, color = time), 
                linetype = "dashed") +
-    geom_vline(xintercept = p0, color = 'black', 
+    geom_vline(xintercept = 0.3, color = 'black', 
                linetype = "dashed") +
     ylab('') + xlab('') +
     scale_y_continuous(n.breaks = 3) +
-    scale_x_continuous(breaks = seq(0,1,0.5),
+    scale_x_continuous(breaks = seq(0,1,0.25),
+                       labels = c('0.00','0.25','0.50','0.75','1.00'),
                        limits = c(0,1)) +
     theme_bw() +
     scale_fill_manual(name = '',
                       values = values) +
     scale_color_manual(name = '',
+                       values = values) +
+    theme(plot.background = element_blank(),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(),
+          legend.position = 'none',
+          legend.key.size = unit(0.2,'cm'),
+          legend.key.width = unit(0.3,'cm'),
+          legend.background = element_blank())
+  return(p)
+}
+
+p1 = plotfun(df1)
+p2 = plotfun(df2)
+p3 = plotfun(df3)
+
+pdf(paste0("Output/withinhost_bottleneck.pdf"), 
+    width = 1.8, height = 1.2)
+print(p1)
+print(p2)
+print(p3)
+dev.off()
+
+plotfun2 = function(df, p0){
+  df$seed = factor(df$seed, levels = c(50,20,10,6,3))
+  means <- df %>%
+    group_by(seed) %>%
+    summarize(mean_p = mean(p, na.rm = T))
+  values = c( '#cb8335','#a3a637',
+              '#68a588','#579aa7','#8781ba')
+  p = ggplot(df, aes(p, fill = seed, color = seed)) + 
+    geom_density(alpha = 0.3, bw = 0.1) +
+    geom_vline(data = means,
+               aes(xintercept = mean_p, color = seed), 
+               linetype = "dashed") +
+    geom_vline(xintercept = p0, color = 'black', 
+               linetype = "dashed") +
+    ylab('') + xlab('') +
+    scale_y_continuous(n.breaks = 3) +
+    scale_x_continuous(breaks = seq(0,1,0.25),
+                       labels = c('0.00','0.25','0.50','0.75','1.00'),
+                       limits = c(0,1)) +
+    theme_bw() +
+    scale_fill_manual(name = '',
                       values = values) +
+    scale_color_manual(name = '',
+                       values = values) +
     theme(plot.background = element_blank(),
           panel.grid.major = element_blank(), 
           panel.grid.minor = element_blank(),
@@ -145,15 +180,46 @@ getplot = function(df, p0 = 0.3){
           legend.key.size = unit(0.2,'cm'),
           legend.key.width = unit(0.3,'cm'),
           legend.background = element_blank())
-  p
   return(p)
 }
 
-pdf(paste0("Output/withinhost_bottleneck.pdf"), 
-    width = 2.2, height = 1.2)
+if(F){
+  n = 1000
+  dfall = data.frame()
+  for (seed in c(3,6,10,20,50)) {
+    print(seed)
+    params = c(r1 = 0.2, 
+               r2 = 0.2, 
+               K = 200*seed, 
+               alpha12 = 1, 
+               alpha21 = 1, 
+               mu = 0)
+    df = getdf(seed = seed, params = params, n = n, p = 0.3)
+    df$seed = seed
+    dfall = rbind(dfall, df)
+  }
+  
+  n = 1000
+  dfall2 = data.frame()
+  for (seed in c(3,6,10,20,50)) {
+    print(seed)
+    params = c(r1 = 0.2, 
+               r2 = 0.2, 
+               K = 200*seed, 
+               alpha12 = 1, 
+               alpha21 = 1, 
+               mu = 0)
+    df = getdf(seed = seed, params = params, n = n, p = 0.5)
+    df$seed = seed
+    dfall2 = rbind(dfall2, df)
+  }
+}
 
-print(getplot(df1, 0.3))
-print(getplot(df2, 0.3))
+p1 = plotfun2(dfall, p0 = 0.3)
+p2 = plotfun2(dfall2, p0 = 0.5)
 
+pdf(paste0("Output/withinhost_bottleneck_seed.pdf"), 
+    width = 1.8, height = 1.4)
+print(p1)
+print(p2)
 dev.off()
-
