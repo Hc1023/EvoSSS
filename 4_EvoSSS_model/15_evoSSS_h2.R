@@ -97,8 +97,8 @@ determinant_fun = function(ifsimu  = T, n_simu = 1, require_dfplot_simu = F){
   poolday = 30
   # The initial cycle - epidemic outbreak
   seed_vec = matrix(0,2,2)
-  seed_vec[,1] = round(34*c(0.4,0.6))
-  seed_vec[,1] = rmultinom(1, size = 34, prob = c(0.4,0.6))
+  seed_vec[,1] = round(34*c(0.3,0.7))
+  seed_vec[,1] = rmultinom(1, size = 34, prob = c(0.3,0.7))
   seed_mat_I1 = diag(seed_vec[1,])
   seed_mat_I2 = diag(seed_vec[2,])
   N = rep(32583, 2)

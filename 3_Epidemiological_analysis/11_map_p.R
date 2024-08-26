@@ -21,6 +21,9 @@ region = c(rep('China',table(idx1)[2]),
 df = rbind(ddf[idx1,], ddf[idx2,], ddf)
 df$region = factor(region, 
                    levels = c('China','Asia','Global'))
+df2 = df[df$region != 'China',]
+x = df[df$region == 'Asia' & df$country =='China',]
+sum(x$`Lineage A`)/(sum(x$`Lineage A`)+sum(x$`Lineage B`))
 dftext = df %>% group_by(region) %>% 
   summarise(mean1 = mean(p),
             mean2 = sum(`Lineage B`)/(sum(`Lineage A`)+sum(`Lineage B`))) %>% data.frame()
@@ -57,6 +60,14 @@ pdf(file = 'Output/map_p.pdf', width = 3.2, height = 1.6)
 print(p)
 dev.off()
 
+df1 = df[df$region == 'Global' & df$p >0.3 & df$country != 'China',]
+df1[,c('country','p')]
+# country         p
+# 22               Spain 0.6428571
+# 231           Thailand 0.347826E1
+# 241 UnitedArabEmirates 0.3076923
+# 25                 USA 0.5165563
+df1[df1$country %in% c('Spain','Thailand','USA'),]
 # > dftext
 # region     mean1     mean2
 # 1  China 0.3451470 0.6694796

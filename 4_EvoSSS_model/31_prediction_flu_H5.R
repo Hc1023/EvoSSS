@@ -9,8 +9,9 @@ library(dplyr)
 df = read.csv('influenza.csv')
 observed_matrix = data.frame(v1 = df$A.H1*df$Total,
                              v2 = df$A.H3*df$Total,
-                             v3 = df$B.Victoria*df$Total)
-voc = c('A.H1','A.H3','B.Victoria')
+                             v3 = df$A.H5*df$Total,
+                             v4 = df$B.Victoria*df$Total)
+voc = c('A.H1','A.H3','A.H5','B.Victoria')
 rownames(observed_matrix) = df$X
 
 update_fun <- function(pars, states_old, N, n) {
@@ -76,16 +77,15 @@ simu <- function(seed_mats, N, poolday, pars, n) {
 
 fitlist = list()
 load('flu.rdata')
-
-poolday = 30
-nday = 100
 determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
   # cond = F; ifsimu  = F; n_simu = 1
-  n = 3
+  n = 4
+  poolday = 30
+  nday = 100
   seed_matrix <- matrix(0, nrow=n, ncol=poolday)
-  seed_matrix[,1] = rep(3,3)
+  seed_matrix[,1] = rep(n,n)
   if(ifsimu){
-    seed_matrix[,1] = rmultinom(1, 9, rep(1/3,3))
+    seed_matrix[,1] = rmultinom(1, n*n, rep(1/n,n))
   }
   seed_vec = colSums(seed_matrix)
   seed_mats <- list()
@@ -98,16 +98,18 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
     stan_data <- list(
       poolday = poolday,
       nday = nday,
-      expected_total = unlist(round(observed_matrix[1,1:3])),
+      expected_total = unlist(round(observed_matrix[1,1:4])),
       seed_mat_I1 = seed_mats[[1]],
       seed_mat_I2 = seed_mats[[2]],
       seed_mat_I3 = seed_mats[[3]],
+      seed_mat_I4 = seed_mats[[4]],
       seed_vec = seed_vec,
-      gamma = 0.157
+      gamma = 0.157,
+      pars_last = c(200, rep(0.3,4))
     )
     # Fit the model
     fit <- stan(file = 'FLU.stan', data = stan_data, 
-                iter = 2500, chains = 1, warmup = 2000,
+                iter = 3000, chains = 1, warmup = 2000,
                 verbose = TRUE)
     fitlist[[1]] = fit
   }
@@ -121,22 +123,54 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
   pars_last = c(mean(posterior$contact), 
                 mean(posterior$beta1),
                 mean(posterior$beta2), 
-                mean(posterior$beta3))
-  
+                mean(posterior$beta3),
+                mean(posterior$beta4))
   if(ifsimu){
     pars_last = c(posterior$contact[n_simu], 
                   posterior$beta1[n_simu],
                   posterior$beta2[n_simu], 
-                  posterior$beta3[n_simu])
+                  posterior$beta3[n_simu],
+                  posterior$beta4[n_simu])
   }
   Onsets_mat = simu(seed_mats, 
                     N = seed_vec * pars_last[1] + 1, 
                     poolday, pars = pars_last[-1], n)
+  if(!ifsimu){
+    fonset = data.frame(x = rep(1:nday,4), 
+                        y = c(Onsets_mat[1:nday,1],
+                              Onsets_mat[1:nday,2],
+                              Onsets_mat[1:nday,3],
+                              Onsets_mat[1:nday,4]),
+                        group = factor(rep(voc, each = nday), 
+                                       levels = voc))
+    
+    tmp = fonset %>% group_by(group) %>% 
+      summarise(y = sum(y)) %>% 
+      data.frame()
+    tmp$x = c(55,60,65,70)
+    
+    observed_df = data.frame(y = unlist(observed_matrix[1,]))
+    
+    observed_df$x = c(25,30,35,40)
+    observed_df$group = voc
+    observed_df = rbind(observed_df, tmp)
+    
+    ggplot() +
+      geom_line(data = fonset,
+                aes(x = x, y = y, 
+                    group = group, color = group))+
+      geom_col(data = observed_df, 
+               aes(x = x, y = y/30, 
+                   group = group, 
+                   color = group, fill = group), 
+               width = 5)
+    
+  }
   
   Onsets_mat_list[[1]] = Onsets_mat
   
-  for (j in 1:34) {
-    # print(j)
+  for (j in 1:36) {
+    if(!ifsimu)print(j)
     {
       Onsets_mat = Onsets_mat_list[[j]]
       
@@ -170,16 +204,18 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
         stan_data <- list(
           poolday = poolday,
           nday = nday,
-          expected_total = unlist(round(observed_matrix[j+1,1:3])),
+          expected_total = unlist(round(observed_matrix[j+1,1:n])),
           seed_mat_I1 = seed_mats[[1]],
           seed_mat_I2 = seed_mats[[2]],
           seed_mat_I3 = seed_mats[[3]],
+          seed_mat_I4 = seed_mats[[4]],
           seed_vec = seed_vec,
-          gamma = 0.157
+          gamma = 0.157,
+          pars_last = pars_last
         )
         # Fit the model
         fit <- stan(file = 'FLU.stan', data = stan_data, 
-                    iter = 2500, chains = 1, warmup = 2000,
+                    iter = 3000, chains = 1, warmup = 2000,
                     verbose = TRUE)
         fitlist[[j+1]] = fit
       }
@@ -189,39 +225,45 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
       pars_last = c(mean(posterior$contact), 
                     mean(posterior$beta1),
                     mean(posterior$beta2),
-                    mean(posterior$beta3))
+                    mean(posterior$beta3),
+                    mean(posterior$beta4))
       if(ifsimu){
         pars_last = c(posterior$contact[n_simu], 
                       posterior$beta1[n_simu],
                       posterior$beta2[n_simu], 
-                      posterior$beta3[n_simu])
+                      posterior$beta3[n_simu],
+                      posterior$beta4[n_simu])
       }
       Onsets_mat = simu(seed_mats, 
                         N = seed_vec * pars_last[1] + 1, 
                         poolday, pars = pars_last[-1], n)
-      
     }
     Onsets_mat_list[[j+1]] = Onsets_mat
   }
   
-  # j = 35 last simulation -- 24-July
-  
-  return(Onsets_mat_list)
+  return(Onsets_mat)
 }
 
-Onsets_mat_list = determinant_fun(cond = F, ifsimu = F, n_simu = 1)
-n = 4
-voc = c("A.H1", "A.H3", "B.Victoria", "A.H5") 
-j = 35
-Onsets_mat = Onsets_mat_list[[j]]
-Onsets_mat_list[[j]] = cbind(Onsets_mat,Onsets_mat[,3]*0.005)
 
-predictfun = function(beta){
-  for (j in 35:47) {
+predictfun = function(c){
+  Onsets_mat = determinant_fun(cond = F, ifsimu = F, n_simu = 1)
+  
+  Onsets_mat_list = list()
+  Onsets_mat_list[[1]] = Onsets_mat 
+  
+  fit = fitlist[[length(fitlist)]]
+  posterior = rstan::extract(fit)
+  pars_last = c(mean(posterior$contact), 
+                mean(posterior$beta1),
+                mean(posterior$beta2),
+                mean(posterior$beta3)*(1+c),
+                mean(posterior$beta4))
+
+  n = 4; poolday = 30
+  for (j in 36+1:10) {
     # print(j)
     {
-      Onsets_mat = Onsets_mat_list[[j]]
-      
+      Onsets_mat = Onsets_mat_list[[j-36]]
       # Generalized extraction of Onset columns for all variants
       Onsets <- list()
       for (i in 1:n) {
@@ -250,22 +292,18 @@ predictfun = function(beta){
       
       fit = fitlist[[j+1-12]]
       posterior = rstan::extract(fit)
-      pars_last = c(mean(posterior$contact), 
-                    mean(posterior$beta1),
-                    mean(posterior$beta2),
-                    mean(posterior$beta3),
-                    beta)
+      pars_last[1] = mean(posterior$contact)
       
       Onsets_mat = simu(seed_mats, 
                         N = seed_vec * pars_last[1] + 1, 
                         poolday, pars = pars_last[-1], n)
       
     }
-    Onsets_mat_list[[j+1]] = Onsets_mat
+    Onsets_mat_list[[j+1-36]] = Onsets_mat
   }
   
   dfplot_simu = data.frame()
-  for (i in 36:48) {
+  for (i in 1:11) {
     Onsets_mat = Onsets_mat_list[[i]]
     k = i-1
     
@@ -291,34 +329,34 @@ predictfun = function(beta){
   
   data$group = factor(data$color, levels = voc)
   
-  data$date = as.Date('2021-07-01') + data$x
+  data$date = as.Date('2024-07-01') + data$x
   
   return(data)
 }
 
-beta_vec = c(0.3,0.32,0.34,0.36)
+c_vec = c(0.0,0.02,0.03,0.05)
 data_list = list()
-for (i in 1:length(beta_vec)) {
-  data = predictfun(beta = beta_vec[i])
+for (i in 1:length(c_vec)) {
+  data = predictfun(c = c_vec[i])
   data_list[[i]] = data
 }
 
 df2all = data.frame()
-for (i in 1:length(beta_vec)) {
+for (i in 1:length(c_vec)) {
   data = data_list[[i]]
-  df2 = data[data$color == voc[4],][-1,]
+  df2 = data[data$color == voc[3],][-1,]
   df2all = rbind(df2all, df2)
 }
-df2all$beta = rep(beta_vec, each = nrow(df2all)/length(beta_vec))
-df2all$beta = factor(df2all$beta, levels = beta_vec)
+df2all$c = rep(c_vec, each = nrow(df2all)/length(c_vec))
+df2all$c = factor(df2all$c, levels = c_vec)
 values = rev(c("#cc7722","#ffa500","#fedc56","#fff700"))
 show_col(values)
 p = ggplot() +
   geom_line(data = df2all, 
-            aes(x = date, y = p, group = beta, color = beta)) +
+            aes(x = date, y = p, group = c, color = c)) +
   scale_color_manual(values = values,
                      name = expression(beta),
-                     labels = c('0.30','0.32','0.34','0.36')) + 
+                     labels = c('1%','2%','3%','5%')) + 
   theme_bw() +
   theme(panel.grid = element_blank(),
         panel.background = element_blank(),
@@ -334,7 +372,7 @@ p = ggplot() +
   xlab('') + ylab('') + 
   coord_cartesian(xlim = c(as.Date('2024-06-30'), as.Date('2025-05-31')),
                   ylim = c(0,1))
-pdf(paste0("Output/flu_H5.pdf"), width = 2.1, height = 1)
+pdf(paste0("Output/flu_H5.pdf"), width = 2, height = 1)
 print(p)
 dev.off()
 
