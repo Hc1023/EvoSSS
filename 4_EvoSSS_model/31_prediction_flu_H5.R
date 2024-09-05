@@ -77,7 +77,7 @@ simu <- function(seed_mats, N, poolday, pars, n) {
 
 fitlist = list()
 load('flu.rdata')
-determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
+determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1, cutoff){
   # cond = F; ifsimu  = F; n_simu = 1
   n = 4
   poolday = 30
@@ -135,41 +135,10 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
   Onsets_mat = simu(seed_mats, 
                     N = seed_vec * pars_last[1] + 1, 
                     poolday, pars = pars_last[-1], n)
-  if(!ifsimu){
-    fonset = data.frame(x = rep(1:nday,4), 
-                        y = c(Onsets_mat[1:nday,1],
-                              Onsets_mat[1:nday,2],
-                              Onsets_mat[1:nday,3],
-                              Onsets_mat[1:nday,4]),
-                        group = factor(rep(voc, each = nday), 
-                                       levels = voc))
-    
-    tmp = fonset %>% group_by(group) %>% 
-      summarise(y = sum(y)) %>% 
-      data.frame()
-    tmp$x = c(55,60,65,70)
-    
-    observed_df = data.frame(y = unlist(observed_matrix[1,]))
-    
-    observed_df$x = c(25,30,35,40)
-    observed_df$group = voc
-    observed_df = rbind(observed_df, tmp)
-    
-    ggplot() +
-      geom_line(data = fonset,
-                aes(x = x, y = y, 
-                    group = group, color = group))+
-      geom_col(data = observed_df, 
-               aes(x = x, y = y/30, 
-                   group = group, 
-                   color = group, fill = group), 
-               width = 5)
-    
-  }
   
   Onsets_mat_list[[1]] = Onsets_mat
   
-  for (j in 1:36) {
+  for (j in 1:cutoff) {
     if(!ifsimu)print(j)
     {
       Onsets_mat = Onsets_mat_list[[j]]
@@ -237,33 +206,18 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
       Onsets_mat = simu(seed_mats, 
                         N = seed_vec * pars_last[1] + 1, 
                         poolday, pars = pars_last[-1], n)
+      
     }
     Onsets_mat_list[[j+1]] = Onsets_mat
   }
   
-  return(Onsets_mat)
-}
-
-
-predictfun = function(c){
-  Onsets_mat = determinant_fun(cond = F, ifsimu = F, n_simu = 1)
+  # j = 35 last simulation -- 24-July
   
-  Onsets_mat_list = list()
-  Onsets_mat_list[[1]] = Onsets_mat 
-  
-  fit = fitlist[[length(fitlist)]]
-  posterior = rstan::extract(fit)
-  pars_last = c(mean(posterior$contact), 
-                mean(posterior$beta1),
-                mean(posterior$beta2),
-                mean(posterior$beta3)*(1+c),
-                mean(posterior$beta4))
-
-  n = 4; poolday = 30
-  for (j in 36+1:10) {
+  for (j in (cutoff+1):36) {
     # print(j)
     {
-      Onsets_mat = Onsets_mat_list[[j-36]]
+      Onsets_mat = Onsets_mat_list[[j]]
+      
       # Generalized extraction of Onset columns for all variants
       Onsets <- list()
       for (i in 1:n) {
@@ -293,17 +247,20 @@ predictfun = function(c){
       fit = fitlist[[j+1-12]]
       posterior = rstan::extract(fit)
       pars_last[1] = mean(posterior$contact)
-      
+      if(ifsimu){
+        pars_last[1] = posterior$contact[n_simu]
+      }
       Onsets_mat = simu(seed_mats, 
                         N = seed_vec * pars_last[1] + 1, 
                         poolday, pars = pars_last[-1], n)
       
     }
-    Onsets_mat_list[[j+1-36]] = Onsets_mat
+    Onsets_mat_list[[j+1]] = Onsets_mat
   }
   
+  # save(fitlist, Onsets_mat_list, file = 'flu.rdata')
   dfplot_simu = data.frame()
-  for (i in 1:11) {
+  for (i in 1:37) {
     Onsets_mat = Onsets_mat_list[[i]]
     k = i-1
     
@@ -316,6 +273,7 @@ predictfun = function(c){
     dfplot_simu = rbind(dfplot_simu, dfplot_simu1)
   }
   
+  
   df2 = dfplot_simu %>% group_by(x, color) %>% 
     summarise(y = sum(y)) %>%
     as.data.frame()
@@ -326,278 +284,108 @@ predictfun = function(c){
     mutate(p = y/sum(y)) %>%
     as.data.frame()
   
+  levels = rev(unique(data$color))
   
-  data$group = factor(data$color, levels = voc)
-  
-  data$date = as.Date('2024-07-01') + data$x
-  
+  data$group = factor(data$color,levels = levels)
   return(data)
 }
 
-c_vec = c(0.0,0.02,0.03,0.05)
-data_list = list()
-for (i in 1:length(c_vec)) {
-  data = predictfun(c = c_vec[i])
-  data_list[[i]] = data
+dfob = data.frame(y = c(as.matrix(observed_matrix)),
+                  x = rep(as.Date(rownames(observed_matrix)),
+                          4),
+                  group = rep(voc, each = nrow(observed_matrix)))
+dfob$group[dfob$group!=voc[4]] = 'A'
+dfob = dfob %>% group_by(group, x) %>% summarise(y = sum(y))
+
+df2_list = list()
+for (n_simu in 1:100) {
+  print(n_simu)
+  data= determinant_fun(cond = F, ifsimu  = T, n_simu = n_simu, cutoff = 25)
+  df2_list[[n_simu]] = data$y
 }
 
-df2all = data.frame()
-for (i in 1:length(c_vec)) {
-  data = data_list[[i]]
-  df2 = data[data$color == voc[3],][-1,]
-  df2all = rbind(df2all, df2)
+simu_Onset1 = data.frame(bind_cols(df2_list))
+
+df2_list = list()
+for (n_simu in 1:100) {
+  print(n_simu)
+  data= determinant_fun(cond = F, ifsimu  = T, n_simu = n_simu, cutoff = 13)
+  df2_list[[n_simu]] = data$y
 }
-df2all$c = rep(c_vec, each = nrow(df2all)/length(c_vec))
-df2all$c = factor(df2all$c, levels = c_vec)
-values = rev(c("#cc7722","#ffa500","#fedc56","#fff700"))
-show_col(values)
-p = ggplot() +
-  geom_line(data = df2all, 
-            aes(x = date, y = p, group = c, color = c)) +
-  scale_color_manual(values = values,
-                     name = expression(beta),
-                     labels = c('1%','2%','3%','5%')) + 
-  theme_bw() +
-  theme(panel.grid = element_blank(),
-        panel.background = element_blank(),
-        plot.background = element_blank(),
-        legend.position = 'right',
-        legend.background = element_rect(color = NA, fill = NA),
-        legend.key.size = unit(0.2,'cm')) + 
-  scale_x_date(breaks = seq(as.Date('2021-01-01'), as.Date('2025-11-01'), by="6 months"),
-               minor_breaks = seq(as.Date('2021-01-01'), as.Date('2025-11-01'), by ='1 month'),
-               date_labels = "%y-%b",
-               expand = c(0,0)) +
-  scale_y_continuous(breaks = c(0,0.5,1)) +
-  xlab('') + ylab('') + 
-  coord_cartesian(xlim = c(as.Date('2024-06-30'), as.Date('2025-05-31')),
-                  ylim = c(0,1))
-pdf(paste0("Output/flu_H5.pdf"), width = 2, height = 1)
-print(p)
-dev.off()
+
+simu_Onset2 = data.frame(bind_cols(df2_list))
+
+if(F){
+  save(simu_Onset1, simu_Onset2, file = 'flu_plot1.rdata')
+  data = determinant_fun(cond = F, ifsimu  = F, n_simu = n_simu)
+}
 
 
-ggplot() +
-  geom_line(data = data, 
-            aes(x = date, y = y, group = group, color= group)) +
-  coord_cartesian(ylim = c(2,max(data$y))) +
-  labs(x = "Date", y = "Proportion") +
-  theme_bw() +
-  theme(legend.position = "right",
-        plot.title = element_text(hjust = 0.5)) +
-  scale_x_date(breaks = seq(as.Date('2021-01-01'), as.Date('2025-11-01'), by="6 months"),
-               minor_breaks = seq(as.Date('2021-01-01'), as.Date('2025-11-01'), by ='1 month'),
-               date_labels = "%y-%b",
-               expand = c(0,0)) +
-  xlab('') + ylab('Cases') + 
-  coord_cartesian(xlim = c(as.Date('2024-06-30'), as.Date('2025-05-31')),
-                  ylim = c(1,max(data$y)))
-
-values2 = c('#98afc7','#0041c2', '#a37ca1', values[2])
-
-plot_data2 = data_list[[4]]
-plist = list()
-for (i in 1:4) {
-  plot_data2 = data_list[[i]]
+getplot = function(simu_Onset, preddate = as.Date('2023-08-01'),
+                   d1 = as.Date('2022-08-01'), d2 = as.Date('2024-05-31')){
+  values = c('#98aff7','#a37c91')
+  # show_col(values)
+  ci_lower <- apply(simu_Onset, 1, quantile, probs = 0.025, na.rm = T)
+  ci_upper <- apply(simu_Onset, 1, quantile, probs = 0.975, na.rm = T)
+  plot_data <- data.frame(
+    x = data$x,
+    group = data$color,
+    Fitted = rowMeans(simu_Onset),
+    LowerCI = ci_lower,
+    UpperCI = ci_upper
+  )
+  
+  plot_data$date = as.Date('2021-07-01') + plot_data$x
+  
+  k = 30
+  pd = 25
+  
+  
+  plot_data$group[plot_data$group!=voc[4]] = 'A'
+  plot_data = plot_data %>% group_by(group, date) %>% 
+    summarise(Fitted = sum(Fitted),
+              LowerCI = sum(LowerCI),
+              UpperCI = sum(UpperCI))
   p = ggplot() +
-    geom_area(data = plot_data2, 
-              aes(x = date, y = p, fill = group),
-              position = 'fill') +
-    scale_fill_manual(name="", 
-                      breaks = voc,
-                      values = alpha(values2, 1)) +
-    coord_cartesian(xlim = c(as.Date('2024-06-30'), as.Date('2025-05-31')),
-                    ylim = c(0,1)) + 
-    scale_x_date(breaks = seq(as.Date('2021-01-01'), as.Date('2025-05-01'), by="6 months"),
+    geom_point(data = dfob,
+               aes(x = x, y = y/k,
+                   group = group, color = group),
+               alpha = 0.8) +
+    geom_ribbon(data = plot_data,
+                aes(x = date, group = group,
+                    ymin = LowerCI, ymax = UpperCI, fill = group)) +
+    geom_line(data = plot_data[plot_data$date < preddate,], 
+              aes(x = date, y = Fitted, group = group, color= group)) +
+    geom_line(data = plot_data[plot_data$date >= preddate,], 
+              aes(x = date, y = Fitted, group = group, color= group),
+              linetype = 'dashed') +
+    scale_color_manual(name="",
+                       values = alpha(values, 0.7)) +
+    scale_fill_manual(name="",
+                      values = alpha(values, 0.3)) +
+    theme_bw() +
+    theme(legend.position = "none",
+          plot.title = element_text(hjust = 0.5)) +
+    scale_x_date(breaks = seq(as.Date('2021-01-01'), as.Date('2025-05-01'), by="1 year"),
                  minor_breaks = seq(as.Date('2021-01-01'), as.Date('2025-05-01'), by ='1 month'),
                  date_labels = "%y-%b",
                  expand = c(0,0)) +
-    scale_y_continuous(breaks = seq(0,1,0.5), expand = c(0, 0)) +
-    theme(panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(),
-          panel.background = element_rect(color = NA, fill = NA),
-          legend.position = 'right',
-          legend.background = element_rect(color = NA, fill = NA),
-          legend.key = element_blank(),
-          legend.key.size = unit(0.4, units = 'cm')) +
-    xlab('') + ylab('Prevalence') 
-  plist[[i]] = p
+    xlab('') + ylab('Cases / Monthly average') + 
+    coord_cartesian(xlim = c(d1, d2),
+                    ylim = c(1,800))
+  
+  return(p)
 }
 
-p2
-pdf(paste0("Output/flu_H5_prevalence.pdf"), width = 2.5, height = 1.2)
-for (i in 1:4) {
-  print(plist[[i]])
-}
+p1 = getplot(simu_Onset1)
+
+p2 = getplot(simu_Onset2, preddate = as.Date('2022-08-01'),
+        d1 = as.Date('2021-08-01'), d2 = as.Date('2023-05-31'))
+
+
+pdf(paste0("Output/flu_plot1.pdf"), width = 2.1, height = 1.45)
+print(p1)
+print(p2)
 dev.off()
-
-parsmat = data.frame()
-for (i in 1:length(fitlist)) {
-  posterior = rstan::extract(fitlist[[i]])
-  parsmat = rbind(parsmat, 
-                  data.frame(Tcycle = i,
-                             y = c(posterior$contact, 
-                                   posterior$beta1,
-                                   posterior$beta2,
-                                   posterior$beta3),
-                             group = c(rep('contact', length(posterior$contact)),
-                                       rep('beta1', length(posterior$beta1)),
-                                       rep('beta2', length(posterior$beta2)),
-                                       rep('beta3', length(posterior$beta3)))
-                             
-                  ))
-  
-}
-
-poolday = 30
-parsmat$date = poolday*(parsmat$Tcycle-1) + as.Date('2021-07-01') 
-df = parsmat[parsmat$group != 'contact', ]
-df$date = as.Date(df$date)
-pd = 8
-
-medians <- df %>%
-  group_by(date, group) %>%
-  summarize(median_y = median(y))
-p3 = ggplot() +
-  geom_boxplot(data = df[df$group == 'beta1',], 
-               aes(x = date-pd, y = y, group = date),
-               color = alpha(values[1],0.7), 
-               fill = alpha(values[1],0.3),
-               width = 6,
-               outlier.shape = NA) +
-  geom_boxplot(data = df[df$group == 'beta2',], 
-               aes(x = date, y = y, group = date),
-               color = alpha(values[2],0.7), 
-               fill = alpha(values[2],0.3),
-               width = 6,
-               outlier.shape = NA) +
-  geom_boxplot(data = df[df$group == 'beta3',], 
-               aes(x = date+pd, y = y, group = date),
-               color = alpha(values[3],0.7), 
-               fill = alpha(values[3],0.3),
-               width = 6,
-               outlier.shape = NA) +
-  scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2024-11-01'), by="6 months"),
-               minor_breaks = seq(as.Date('2019-12-01'), as.Date('2024-11-01'), by ='1 month'),
-               date_labels = "%y-%b",
-               expand = c(0, 0)) +
-  geom_line(data = medians[medians$group == 'beta1',], 
-            aes(x = date - pd, y = median_y), 
-            color = values[1], 
-            linewidth = 0.4) +
-  geom_line(data = medians[medians$group == 'beta2',], 
-            aes(x = date, y = median_y), 
-            color = values[2], 
-            linewidth = 0.4) +
-  geom_line(data = medians[medians$group == 'beta3',], 
-            aes(x = date + pd, y = median_y), 
-            color = values[3], 
-            linewidth = 0.4) +
-  coord_cartesian(xlim = c(as.Date('2021-09-01'), 
-                           as.Date('2024-05-31')),
-                  ylim = c(0.24,0.37)) +
-  scale_y_continuous(breaks = c(0.25,0.3,0.35)) +
-  theme_bw() + xlab('') + ylab(expression(beta))
-pdf(paste0("Output/flu_plot_beta.pdf"), width = 3.3, height = 1.2)
-print(p3)
-dev.off()
-
-
-
-if(F){
-  data = determinant_fun(cond = F, ifsimu  = T, n_simu = n_simu)
-  data$date = as.Date('2021-07-01') + data$x
-  dfob = data.frame(y = c(observed_matrix[,1],
-                          observed_matrix[,2],
-                          observed_matrix[,3]),
-                    x = rep(as.Date(rownames(observed_matrix)),
-                            3),
-                    group = rep(voc, each = nrow(observed_matrix)))
-  
-  tmp = sapply(Onsets_mat_list, function(x){
-    colSums(x)
-  })
-  dfsimu = data.frame(y = c(tmp[1,],tmp[2,],tmp[3,]),
-                      group = rep(voc, each = length(Onsets_mat_list)),
-                      x = rep(dfob$x[1:length(Onsets_mat_list)], 3))
-  for (i in 1:4) {
-    dfsimu = rbind(dfsimu, dfsimu)
-  }
-  dfsimu$y2 = dfsimu$y + runif(nrow(dfsimu), min = -5, max = 1000)
-  
-  dfsimu2 = dfsimu %>% group_by(x, group) %>% 
-    summarise(y = mean(y2),
-              y1 = quantile(y2, 0.025),
-              y2 = quantile(y2, 0.975)) %>%
-    as.data.frame()
-  dfsimu2$group = factor(dfsimu2$group, levels = voc)
-  ggplot() +
-    geom_col(data = dfob,
-             aes(x = x, y = y/30, 
-                 group = group, fill = group),
-             alpha = 0.8,
-             position = position_dodge(width = 20)) +
-    geom_point(data = dfsimu2,
-               aes(x = x, y = y/30, color = group),
-               alpha = 0.5,
-               position = position_dodge(width = 20))+ 
-    geom_errorbar(data = dfsimu2,
-                  aes(x = x,
-                      ymin = y1/30, ymax = y2/30,
-                      color = group),
-                  position = position_dodge(width = 20))+
-    geom_line(data = data, 
-              aes(x = date, y = y, group = group, color= group)) +
-    coord_cartesian(ylim = c(2,max(data$y))) +
-    labs(x = "Date", y = "Proportion") +
-    theme_minimal() +
-    theme(legend.position = "right",
-          plot.title = element_text(hjust = 0.5)) +
-    scale_x_date(breaks = seq(as.Date('2021-01-01'), as.Date('2024-11-01'), by="6 months"),
-                 minor_breaks = seq(as.Date('2021-01-01'), as.Date('2024-11-01'), by ='1 month'),
-                 date_labels = "%y-%b") +
-    xlab('') + ylab('Cases') + 
-    coord_cartesian(xlim = c(as.Date('2021-06-01'), as.Date('2024-05-31')),
-                    ylim = c(1,max(data$y)))
-  
-  data$group = factor(data$group, levels = c('Delta','Alpha','D614G'))
-  
-  
-  ggplot() +
-    geom_area(data = data, 
-              aes(x = date, y = p, fill = group),
-              position = 'fill') +
-    coord_cartesian(xlim = c(as.Date('2020-06-30'), as.Date('2021-10-31')),
-                    ylim = c(0,1)) +
-    scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2024-11-01'), by="6 months"),
-                 minor_breaks = seq(as.Date('2019-12-01'), as.Date('2024-11-01'), by ='1 month'),
-                 date_labels = "%y-%b",
-                 expand = c(0, 0)) +
-    scale_y_continuous(breaks = seq(0,1,0.5), expand = c(0, 0))
-  
-  parsmat = data.frame()
-  for (i in 1:length(fitlist)) {
-    posterior = rstan::extract(fitlist[[i]])
-    parsmat = rbind(parsmat, 
-                    data.frame(Tcycle = i,
-                               y = c(posterior$contact, 
-                                     posterior$beta1,
-                                     posterior$beta2,
-                                     posterior$beta3),
-                               group = c(rep('contact', length(posterior$contact)),
-                                         rep('beta1', length(posterior$beta1)),
-                                         rep('beta2', length(posterior$beta2)),
-                                         rep('beta3', length(posterior$beta3)))
-                               
-                    ))
-    
-  }
-  parsmat$group = factor(parsmat$group)
-  parsmat$Tcycle = factor(parsmat$Tcycle)
-  ggplot(parsmat[parsmat$group != 'contact', ], 
-         aes(x = Tcycle, y = y, color = group, fill = group)) +
-    geom_boxplot(outlier.shape = NA) 
-  
-}
 
 

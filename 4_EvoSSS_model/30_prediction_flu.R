@@ -560,6 +560,70 @@ print(p3)
 dev.off()
 
 
+df = parsmat[parsmat$group == 'contact', ]
+df$date = as.Date(df$date)
+df2 = df
+df2$group = 'contact2' 
+df2$date = df2$date + years(1)
+df3 = df2
+df3$group = 'contact3' 
+df3$date = df2$date + years(1)
+pd = 8
+
+medians <- df %>%
+  group_by(date, group) %>%
+  summarize(median_y = median(y))
+
+medians2 <- df2 %>%
+  group_by(date, group) %>%
+  summarize(median_y = median(y))
+
+medians3 <- df3 %>%
+  group_by(date, group) %>%
+  summarize(median_y = median(y))
+p4 = ggplot() +
+  geom_boxplot(data = df, 
+               aes(x = date, y = y, group = date),
+               color = alpha('#3d3da1',0.9), 
+               fill = alpha('#3d3da1',0.3),
+               width = 6,
+               outlier.shape = NA) +
+  geom_boxplot(data = df2, 
+               aes(x = date, y = y, group = date),
+               color = alpha('#adadc1',0.9), 
+               fill = alpha('#adadc1',0.3),
+               width = 6,
+               outlier.shape = NA) +
+  geom_boxplot(data = df3, 
+               aes(x = date, y = y, group = date),
+               color = alpha('#ad8d81',0.9), 
+               fill = alpha('#ad8d81',0.3),
+               width = 6,
+               outlier.shape = NA) +
+  scale_x_date(breaks = seq(as.Date('2023-01-01'), as.Date('2023-12-01'), by="3 months"),
+               minor_breaks = seq(as.Date('2023-01-01'), as.Date('2024-11-01'), by ='1 month'),
+               date_labels = "%b",
+               expand = c(0, 0)) +
+  geom_line(data = medians, 
+            aes(x = date, y = median_y), 
+            color = '#3d3da1', 
+            linewidth = 0.4) +
+  geom_line(data = medians2, 
+            aes(x = date, y = median_y), 
+            color = '#adadc1', 
+            linewidth = 0.4) +
+  geom_line(data = medians3, 
+            aes(x = date, y = median_y), 
+            color = '#ad8d81', 
+            linewidth = 0.4) +
+  coord_cartesian(xlim = c(as.Date('2023-01-01'), 
+                           as.Date('2024-01-01'))) +
+  scale_y_continuous() +
+  theme_bw() + xlab('') + ylab('')
+
+pdf(paste0("Output/flu_plot_contact.pdf"), width = 1.65, height = 1.2)
+print(p4)
+dev.off()
 
 
 
