@@ -8,7 +8,7 @@ library(dplyr)
 library(RColorBrewer)
 
 df = read.csv('../3_Epidemiological_analysis/Covid19CasesGISAID.csv')
-load('AB_constant_beta.rdata')
+load('h2_hotspots.rdata')
 pars = c(0.398, 0.398, 0.157)
 VOC = c("B", "A")
 names(VOC) = c("Lineage B","Lineage A")
@@ -35,7 +35,7 @@ merged_df <- full_df %>%
 voc = unique(merged_df$V)
 
 observed_matrix = data.frame(v1 = merged_df[merged_df$V == 'A', 'count'],
-                             v2 = merged_df[merged_df$V == 'B', 'count'])
+                             v2 = merged_df[merged_df$V == 'B', 'count']) * 28
 rownames(observed_matrix) = full_dates
 
 fexpect0 = data.frame(y = c(observed_matrix$v1,observed_matrix$v2,
@@ -92,8 +92,11 @@ simu <- function(seed_mat_I1, seed_mat_I2, N, poolday) {
 
 
 
-
-determinant_fun = function(ifsimu  = T, n_simu = 1, require_dfplot_simu = F){
+fitlist = list()
+determinant_fun = function(cond = F, ifsimu  = T, n_simu = 1, 
+                           h = 2, seed = 6){
+  # ifsimu  = F; cond = T; n_simu = 1
+  
   poolday = 30
   # The initial cycle - epidemic outbreak
   seed_vec = matrix(0,2,2)
@@ -108,13 +111,13 @@ determinant_fun = function(ifsimu  = T, n_simu = 1, require_dfplot_simu = F){
   poolday = 30
   nday = 100
   n = 2
+  
   pars = c(0.398, 0.398, 0.157)
-  
-  
+  pars_last = 10000
   for (j in 1:24) {
-    # print(j)
+    if(cond) print(j)
     {
-      
+
       Onsets_mat = Onsets_mat_list[[j]]
       
       # Generalized extraction of Onset columns for all variants
@@ -122,37 +125,87 @@ determinant_fun = function(ifsimu  = T, n_simu = 1, require_dfplot_simu = F){
       for (i in 1:n) {
         Onsets[[i]] <- Onsets_mat[poolday + 1:poolday, i] + 1e-3
       }
+      expected_matrix = observed_matrix[poolday*j+1:nday,] - Onsets_mat[poolday+1:nday,] 
+      expected_matrix[expected_matrix<0] = 0
+      expected_matrix = round(expected_matrix)
+      expected_matrix[(2*poolday + 1):nday,] = 0
       
-      fit = fitlist[[j+1]]
-      posterior = rstan::extract(fit)
+      fexpect = data.frame(x = rep(1:nday,2), 
+                           y = c(expected_matrix[1:nday,1],
+                                 expected_matrix[1:nday,2]),
+                           group = factor(rep(c('A','B'), 
+                                              each = nday),
+                                          levels = c('A','B')))
       
-      pars_last = c(mean(posterior$mobility), mean(posterior$contact))
-      if(ifsimu){
-        pars_last = c(posterior$mobility[n_simu],
-                      posterior$contact[n_simu])
-      }
-      # Mobility control force
-      mobility <- rep(pars_last[1], 30) 
-      Mobility_matrix <- diag(mobility)
-      seed_vec =  (Onsets[[1]] + Onsets[[2]]) %*% 
-        Mobility_matrix %>% as.numeric()
+      seed_matrix = matrix(0,2,poolday)
+      seed_vec =  c(rep(seed,h), rep(0, poolday-h))
       p = Onsets[[1]]/(Onsets[[1]] + Onsets[[2]])
-      seed_matrix = sapply(1:length(p), function(x){
-        rmultinom(1, ceiling(seed_vec[x]), c(p[x],1-p[x]))
-      })
       
+      if(ifsimu & j<=10){
+        seed_matrix[,1:h] = sapply(1:h, function(x){
+          rmultinom(1, ceiling(seed_vec[x]), c(p[x],1-p[x]))
+        })
+      }else{
+        seed_matrix[,1:h] = sapply(1:h, function(x){
+          seed_vec[x] * c(p[x],1-p[x])
+        })
+      }
       # Create seed_matrices for each variant
-      seed_mats <- list()
+      seed_mats = list()
       
       for (i in 1:n) {
         seed_mats[[i]] <- diag(seed_matrix[i,])
       }
-      N = seed_vec * pars_last[2] + 1
+      if(cond){
+        stan_data <- list(
+          poolday = poolday,
+          nday = nday,
+          expected_matrix = expected_matrix,
+          pars = pars,
+          seed_mat_I1 = seed_mats[[1]],
+          seed_mat_I2 = seed_mats[[2]],
+          seed_vec = seed_vec,
+          h = h,
+          pars_last = pars_last
+        )
+        
+        # Fit the model
+        fit <- stan(file = 'h2.stan', data = stan_data, 
+                    iter = 3000, chains = 1, warmup = 2000,
+                    verbose = TRUE)
+        fitlist[[j+1]] = fit
+      }
+      fit = fitlist[[j+1]]
+      posterior = rstan::extract(fit)
+    
+      pars_last = mean(posterior$contact)
+      if(ifsimu){
+        pars_last = posterior$contact[n_simu]
+      }
+    
+      Onsets_mat = simu(seed_mats[[1]], seed_mats[[2]], 
+                        seed_vec * pars_last + 1, poolday)
       
-      Onsets_mat = simu(seed_mats[[1]], seed_mats[[2]], N, poolday)
+      if(!ifsimu){
+        fonset = data.frame(x = rep(1:nday,2), 
+                            y = c(Onsets_mat[1:nday,1],
+                                  Onsets_mat[1:nday,2]),
+                            group = factor(rep(c('A','B'), each = nday),
+                                           levels = c('A','B')))
+        
+        ggplot() +
+          geom_point(data = fexpect, 
+                     aes(x = x, y = y, group = group, color = group)) +
+          geom_line(data = fonset,
+                    aes(x = x, y = y, group = group, color = group)) 
+      }
     }
     
     Onsets_mat_list[[j+1]] = Onsets_mat
+  }
+  
+  if(cond == T){
+    return(fitlist)
   }
   
   dfplot_simu = data.frame()
@@ -184,84 +237,133 @@ determinant_fun = function(ifsimu  = T, n_simu = 1, require_dfplot_simu = F){
   
   data$color = factor(data$color, levels = levels)
   
-  if(require_dfplot_simu){
-    return(dfplot_simu)
-  }
   return(data)
 }
 
+
+
+if(F){
+  fitlist_s6_10 = determinant_fun(cond = T, ifsimu = F, h = 10, seed = 6)
+  fitlist = fitlist_s6_10
+  fitlist_s20_10 = determinant_fun(cond = T, ifsimu = F, h = 10, seed = 20)
+  fitlist = fitlist_s20_10
+  fitlist_s6_30 = determinant_fun(cond = T, ifsimu = F, h = 30, seed = 6)
+  fitlist = fitlist_s6_30
+  fitlist_s20_30 = determinant_fun(cond = T, ifsimu = F, h = 30, seed = 20)
+  fitlist = fitlist_s20_30
+  
+  save(fitlist_s6_10, fitlist_s20_10, 
+       fitlist_s6_30, fitlist_s20_30,
+       file = 'h2_hotspots.rdata')
+  load('h2_hotspots.rdata')
+  
+}
 if(T){
+  h = 10; seed = 6; fitlist = fitlist_s6_10
+  h = 10; seed = 20; fitlist = fitlist_s20_10
+  h = 30; seed = 6; fitlist = fitlist_s6_30
+  h = 30; seed = 20; fitlist = fitlist_s20_30
   
   df2_list = list()
-  for (n_simu in 1:100) {
+  for (n_simu in 1:1000) {
     print(n_simu)
-    data = determinant_fun(ifsimu  = T, n_simu = n_simu, require_dfplot_simu = F)
+    data = determinant_fun(cond = F, ifsimu  = T, n_simu = n_simu, 
+                           h = h, seed = seed)
     df2_list[[n_simu]] = data$y
   }
-  simu_Onset = data.frame(bind_cols(df2_list))
-  ci_lower <- apply(simu_Onset, 1, quantile, probs = 0.025, na.rm = T)
-  ci_upper <- apply(simu_Onset, 1, quantile, probs = 0.975, na.rm = T)
-  plot_data <- data.frame(
-    x = data$x,
-    V = data$color,
-    # Observed = observed_cases,
-    Fitted = rowMeans(simu_Onset),
-    LowerCI = ci_lower,
-    UpperCI = ci_upper
-  )
-  plot_data$date = plot_data$x + as.Date('2019-12-31')
-  plot_data$group = 'A'
-  plot_data$group[plot_data$V == '2'] = 'B'
-  plot_data$group = factor(plot_data$group, levels = c('A','B'))
-  plot_data = plot_data[plot_data$x>1,]
-  plot_data_sampling = plot_data
+  {
+    simu_Onset = data.frame(bind_cols(df2_list))
+    ci_lower1 <- apply(simu_Onset, 1, quantile, probs = 0.25, na.rm = T)
+    ci_upper1 <- apply(simu_Onset, 1, quantile, probs = 0.75, na.rm = T)
+    ci_lower2 <- apply(simu_Onset, 1, quantile, probs = 0.025, na.rm = T)
+    ci_upper2 <- apply(simu_Onset, 1, quantile, probs = 0.975, na.rm = T)
+    plot_data <- data.frame(
+      x = data$x,
+      V = data$color,
+      # Observed = observed_cases,
+      Fitted = rowMeans(simu_Onset),
+      LowerCI1 = ci_lower1,
+      UpperCI1 = ci_upper1,
+      LowerCI2 = ci_lower2,
+      UpperCI2 = ci_upper2
+    )
+    plot_data$date = plot_data$x + as.Date('2019-12-31')
+    plot_data$group = 'A'
+    plot_data$group[plot_data$V == '2'] = 'B'
+    plot_data$group = factor(plot_data$group, levels = c('A','B'))
+    plot_data = plot_data[plot_data$x>1,]
+  }
+
   if(F){
-    save(plot_data_sampling, file = 'h2.rdata')
-    load('h2.rdata')
+    plot_data_s6_10 = plot_data
+    plot_data_s20_10 =  plot_data
+    plot_data_s6_30 = plot_data
+    plot_data_s20_30 =  plot_data
+    save(plot_data_s6_10, plot_data_s20_10, 
+         plot_data_s6_30, plot_data_s20_30, 
+         file = 'h2_hotspots_plot.rdata')
+    load('h2_hotspots_plot.rdata')
+    
+    plot_data = plot_data_s6_10
+    plot_data = plot_data_s20_10
+    plot_data = plot_data_s6_30
+    plot_data = plot_data_s20_30
   }
 
   values = c(hue_pal()(3)[1], hue_pal()(3)[3])
-  
-  p = ggplot() +
-    geom_point(data = fexpect0, 
-               aes(x = date, y = y, 
-                   group = group, color = group),
-               size = 0.4, shape = 16) +
-    geom_ribbon(data = plot_data_sampling, 
-                aes(x = date, group = group, 
-                    ymin = LowerCI/28, ymax = UpperCI/28, fill = group)) + 
-    geom_line(data = plot_data_sampling, 
-              aes(x = date, y = Fitted/28, 
-                  group = group, color = group), linewidth = 1) +
-    scale_color_manual(name="Variant",
-                       values = alpha(values, 0.7)) +
-    scale_fill_manual(name="Variant",
-                      values = alpha(values, 0.3)) +
-    scale_y_continuous(trans='log10',
-                       breaks = c(1,10,100,1000,10000),
-                       labels = c(expression(10^0),expression(10^1),
-                                  expression(10^2), expression(10^3),
-                                  expression(10^4))) +
-    labs(x = "Date", y = "Proportion") +
-    theme_bw() +
-    theme(legend.position = "right",
-          legend.key.size = unit(0.2,'cm'),
-          legend.spacing = unit(0.0,'cm'),
-          legend.text = element_text(size = 8),
-          legend.title = element_text(size = 10,
-                                      margin = margin(2, 0, 2, 0)),
-          legend.margin = margin(0, 0, 0, 0),
-          panel.grid.minor = element_blank()) +
-    scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="6 months"),
-                 minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-11-01'), by ='1 month'),
-                 date_labels = "%y-%b") +
-    xlab('') + ylab('Cases') + 
-    coord_cartesian(xlim = c(as.Date('2020-01-01'), as.Date('2021-10-31')),
-                    ylim = c(1,2*10^4))
-  
-  p
-  pdf(paste0("Output/evoSSS_h2.pdf"), width = 3, height = 1.5)
-  print(p)
+  getp = function(plot_data){
+    p = ggplot() +
+      geom_point(data = fexpect0, 
+                 aes(x = date, y = y/28, 
+                     group = group, color = group),
+                 size = 0.1, shape = 16) +
+      geom_ribbon(data = plot_data, 
+                  aes(x = date, group = group, 
+                      ymin = LowerCI2/28, ymax = UpperCI2/28, 
+                      fill = group)) + 
+      geom_ribbon(data = plot_data, 
+                  aes(x = date, group = group, 
+                      ymin = LowerCI1/28, ymax = UpperCI1/28, 
+                      fill = group), alpha = 0.5) + 
+      geom_line(data = plot_data, 
+                aes(x = date, y = Fitted/28, 
+                    group = group, color = group), linewidth = 0.2) +
+      scale_color_manual(name="Variant",
+                         values = alpha(values, 0.7)) +
+      scale_fill_manual(name="Variant",
+                        values = alpha(values, 0.3)) +
+      scale_y_continuous(trans='log10',
+                         breaks = c(1,100,10000),
+                         labels = c(expression(10^0), expression(10^2), expression(10^4))) +
+      labs(x = "Date", y = "Proportion") +
+      theme_bw() +
+      theme(legend.position = "none",
+            legend.key.size = unit(0.2,'cm'),
+            legend.spacing = unit(0.0,'cm'),
+            legend.text = element_text(size = 8),
+            legend.title = element_text(size = 10,
+                                        margin = margin(2, 0, 2, 0)),
+            legend.margin = margin(0, 0, 0, 0),
+            panel.grid.minor = element_blank()) +
+      scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="12 months"),
+                   minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-11-01'), by ='1 month'),
+                   date_labels = "%y-%b") +
+      xlab('') + ylab('Cases') + 
+      coord_cartesian(xlim = c(as.Date('2020-01-01'), as.Date('2021-10-31')),
+                      ylim = c(1,2*10^4))
+    
+    return(p)
+  }
+  p1 = getp(plot_data_s6_10)
+  p2 = getp(plot_data_s20_10)
+  p3 = getp(plot_data_s6_30)
+  p4 = getp(plot_data_s20_30)
+
+  pdf(paste0("Output/evoSSS_h2.pdf"), width = 1.6, height = 1.2)
+  print(p1)
+  print(p2)
+  print(p3)
+  print(p4)
   dev.off()
 }
 

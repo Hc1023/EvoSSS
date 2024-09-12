@@ -505,6 +505,8 @@ pd = 8
 medians <- df %>%
   group_by(date, group) %>%
   summarize(median_y = median(y))
+
+
 p3 = ggplot() +
   geom_boxplot(data = df[df$group == 'beta1',], 
                aes(x = date-pd, y = y, group = date),
@@ -581,6 +583,8 @@ medians2 <- df2 %>%
 medians3 <- df3 %>%
   group_by(date, group) %>%
   summarize(median_y = median(y))
+
+values = c('#98afc7','#0041c2', "#ffa500",'#a37ca1')
 p4 = ggplot() +
   geom_boxplot(data = df, 
                aes(x = date, y = y, group = date),
@@ -600,8 +604,8 @@ p4 = ggplot() +
                fill = alpha('#ad8d81',0.3),
                width = 6,
                outlier.shape = NA) +
-  scale_x_date(breaks = seq(as.Date('2023-01-01'), as.Date('2023-12-01'), by="3 months"),
-               minor_breaks = seq(as.Date('2023-01-01'), as.Date('2024-11-01'), by ='1 month'),
+  scale_x_date(breaks = seq(as.Date('2023-01-01'), as.Date('2025-12-01'), by="3 months"),
+               minor_breaks = seq(as.Date('2023-01-01'), as.Date('2025-11-01'), by ='1 month'),
                date_labels = "%b",
                expand = c(0, 0)) +
   geom_line(data = medians, 
@@ -616,8 +620,8 @@ p4 = ggplot() +
             aes(x = date, y = median_y), 
             color = '#ad8d81', 
             linewidth = 0.4) +
-  coord_cartesian(xlim = c(as.Date('2023-01-01'), 
-                           as.Date('2024-01-01'))) +
+  coord_cartesian(xlim = c(as.Date('2023-07-01'), 
+                           as.Date('2024-06-30'))) +
   scale_y_continuous() +
   theme_bw() + xlab('') + ylab('')
 
