@@ -102,13 +102,13 @@ simu <- function(seed_mats, N, poolday, pars, n) {
 fitlist = list()
 
 determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
-  
+  # cond = T; ifsimu  = F; n_simu = 1
   n = 2
   poolday = 30
   nday = 100
   
   # Create a dataframe with all dates
-  d0 <- expand.grid(date = as.Date('2020-12-20') + 0:10, 
+  d0 <- expand.grid(date = as.Date('2020-12-20') + 1:10, 
                     V = unique(df$V))
   d1 <- d0 %>%
     left_join(df, by = c("date", "V")) %>%
@@ -145,7 +145,7 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
     )
     # Fit the model
     fit <- stan(file = 'VOC2.stan', data = stan_data, 
-                iter = 3000, chains = 1, warmup = 2000,
+                iter = 3000, chains = 4, warmup = 2000,
                 verbose = TRUE)
     fitlist[[1]] = fit
   }
@@ -197,7 +197,7 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
   Onsets_mat_list[[1]] = Onsets_mat
   # cond = T
   # cond = F
-  
+  # 1:20
   for (j in 1:20) {
     if(cond) print(j)
     {
@@ -263,7 +263,7 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
         )
         # Fit the model
         fit <- stan(file = 'VOC2.stan', data = stan_data, 
-                    iter = 3000, chains = 1, warmup = 2000,
+                    iter = 3000, chains = 4, warmup = 2000,
                     verbose = TRUE)
         fitlist[[j+1]] = fit
       }
@@ -309,7 +309,7 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
     Onsets_mat_list[[j+1]] = Onsets_mat
   }
   
-  # save(fitlist, file = 'voc2.rdata')
+  # save(fitlist, file = 'voc2_chain4.rdata')
   dfplot_simu = data.frame()
   for (i in 1:21) {
     Onsets_mat = Onsets_mat_list[[i]]
@@ -586,4 +586,10 @@ if(F){
   
 }
 
+pdf(file = 'Output/trace_voc2.pdf', 
+    width = 9, height = 2)
+for (i in 1:21) {
+  print(traceplot(fitlist[[i]]))
+}
+dev.off()
 
