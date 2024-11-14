@@ -5,10 +5,10 @@ library(scales)
 library(gridExtra)
 library(reshape2)
 
-realData_all <- read.csv("Covid19CasesWH.csv", row.names = 1)
+realData_all <- read.csv("../4_evoSSS_model/Covid19CasesWH.csv", row.names = 1)
 CaseNum = realData_all$CaseNum
 I0 = sum(CaseNum[22:24])
-load(file = 'evoSIR.rdata')
+load(file = '../4_evoSSS_model/evoSIR/evoSIR.rdata')
 
 df = data.frame()
 for (i in 1:9) {
@@ -17,8 +17,8 @@ for (i in 1:9) {
   beta1 = posterior_samples$beta1
   beta2 = posterior_samples$beta2
   gamma = posterior_samples$gamma
-  R1 = mean(beta1/gamma)
-  R2 = mean(beta2/gamma)
+  # R1 = mean(beta1/gamma)
+  # R2 = mean(beta2/gamma)
   ratio = i/10
   I10 = round(sum(CaseNum[22:24])*ratio)
   I20 = round(sum(CaseNum[22:24])*(1-ratio))
@@ -28,7 +28,7 @@ for (i in 1:9) {
   ci_lower = quantile(delta, probs = 0.025, na.rm = T)
   ci_upper = quantile(delta, probs = 0.975, na.rm = T)
   
-  df = rbind(df, data.frame(A = R1, B = R2, 
+  df = rbind(df, data.frame(A = mean(beta1), B = mean(beta2), 
                             delta = mean(delta), 
                             group = ratio,
                             ci_lower = ci_lower,
@@ -68,16 +68,21 @@ p <- ggplot(data_melted,
   geom_point(shape = 21) +
   scale_size_continuous(range = c(1, 12), guide = 'none') + 
   theme_minimal() +
-  labs(x = "", y = "", size = "R0") +
+  labs(x = "", y = "", size = expression(beta)) +
   theme(panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
         legend.position = "right",
         legend.key.size = unit(0.2,'cm'),
         panel.background = element_blank()) +
   scale_fill_gradient2(low = "blue", mid = "white", high = "red", 
-                       midpoint = 2.5, name = expression(R[0]))
+                       midpoint = 0.39, name = expression(beta),
+                       breaks = c(0.4,0.45,0.5))
 
 p
+
+pdf(paste0("Output/acrosshost_intro_beta.pdf"), width = 4.4, height = 1.3)
+print(p)
+dev.off()
 
 pdf(paste0("Output/R0.pdf"), width = 4.5, height = 1.45)
 print(p)

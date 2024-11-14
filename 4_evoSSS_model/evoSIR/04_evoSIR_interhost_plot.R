@@ -5,7 +5,7 @@ library(scales)
 realData_all <- read.csv("Covid19CasesWH.csv", row.names = 1)
 realData <- realData_all[-c(1:24), ] 
 observed_cases = realData$CaseNum
-load(file = 'evoSIR.rdata')
+load(file = 'evoSIR/evoSIR.rdata')
 update_fun = function(pars, states_old){
   
   S <- states_old[1]

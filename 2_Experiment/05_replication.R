@@ -152,39 +152,39 @@ for (i in 1:3) {
 out_df$Ct = -log2(out_df$V1) + max(dat$Ct)
 
 # Plotting
-pd = 3
+pd = 0
 values = c(hue_pal()(3)[1], hue_pal()(3)[3],  '#aa85a6')
 out_df$group = factor(out_df$group, levels = g)
 dat$group = factor(dat$group, levels = c('B','A+B','A'))
 annotation_df$Time = c(0.6,8,26,48,72) + 21
 annotation_df$y = c(31,28.6,20,13,11.6)
-p1 = ggplot(data = out_df, 
+p1 = ggplot() +
+  geom_line(data = out_df[out_df$group!='A+B',], 
             aes(x = time, y = Ct, group = group,
                 color = group, fill = group)) +
-  geom_line() +
   geom_boxplot(data = dat[dat$group == 'A',], 
                aes(x = timepoint+pd, y = Ct, 
                    group = timepoint),
                color = values[1], fill = alpha(values[1], 0.3),
-               outlier.shape = NA, width = 1.9*pd) +
+               outlier.shape = NA, width = 4) +
   geom_boxplot(data = dat[dat$group == 'B',], 
                aes(x = timepoint-pd, y = Ct, 
                    group = timepoint), 
                color = values[2], fill = alpha(values[2], 0.3),
-               outlier.shape = NA, width = 1.9*pd) +
-  geom_boxplot(data = dat[dat$group == 'A+B',], 
-               aes(x = timepoint, y = Ct, 
-                   group = timepoint), 
-               color = values[3], fill = alpha(values[3], 0.3),
-               outlier.shape = NA, width = 1.9*pd) +
-  geom_jitter(data = dat, 
+               outlier.shape = NA, width = 4) +
+  # geom_boxplot(data = dat[dat$group == 'A+B',], 
+  #              aes(x = timepoint, y = Ct, 
+  #                  group = timepoint), 
+  #              color = values[3], fill = alpha(values[3], 0.3),
+  #              outlier.shape = NA, width = 1.9*pd) +
+  geom_jitter(data = dat[dat$group!='A+B',], 
               aes(x = timepoint, y = Ct, color = group, group = group),
               alpha = 0.5,
               position = position_jitterdodge(jitter.width = 1,
                                               dodge.width = 4*pd),
               show.legend = F) + 
   scale_color_manual(name = '', values = values) +
-  scale_y_continuous(trans = 'log10') +
+  # scale_y_continuous(trans = 'log10') +
   scale_x_continuous(breaks = c(2,8,24,48,72),
                      minor_breaks = c()) +
   theme_bw() +
@@ -192,7 +192,8 @@ p1 = ggplot(data = out_df,
   theme(legend.position = c(0.8,0.8),
         legend.key.size = unit(0.4,'cm'),
         legend.background = element_blank(),
-        legend.key = element_blank()) +
+        legend.key = element_blank(),
+        panel.grid.minor = element_blank()) +
   annotate("text", x = annotation_df$Time, y = annotation_df$y,
            label = x, vjust = -0.5, size = 2.8)
 p1

@@ -381,8 +381,8 @@ simu_Onset = data.frame(bind_cols(df2_list))
 if(F){
   save(simu_Onset, dfsimu2, file = 'flu_plot.rdata')
   load('flu_plot.rdata')
-  datalist = determinant_fun(cond = F, ifsimu  = F, n_simu = n_simu)
-  data2 = datalist[[1]]
+  datalist = determinant_fun(cond = F, ifsimu  = T, n_simu = 1)
+  data  = datalist[[1]]
 }
 
 
@@ -432,12 +432,13 @@ p = ggplot() +
                     values = alpha(values, 0.3)) +
   theme_bw() +
   theme(legend.position = "none",
-        plot.title = element_text(hjust = 0.5)) +
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.minor = element_blank()) +
   scale_x_date(breaks = seq(as.Date('2021-01-01'), as.Date('2025-05-01'), by="6 months"),
                minor_breaks = seq(as.Date('2021-01-01'), as.Date('2025-05-01'), by ='1 month'),
                date_labels = "%y-%b",
                expand = c(0,0)) +
-  xlab('') + ylab('Cases / Monthly average') + 
+  xlab('') + ylab('Daily cases') + 
   coord_cartesian(xlim = c(as.Date('2021-09-01'), as.Date('2025-05-31')),
                   ylim = c(1,max(plot_data$UpperCI)))
 
@@ -556,7 +557,8 @@ p3 = ggplot() +
                            as.Date('2024-07-06')),
                   ylim = c(0.24,0.37)) +
   scale_y_continuous(breaks = c(0.25,0.3,0.35)) +
-  theme_bw() + xlab('') + ylab(expression(beta))
+  theme_bw() + xlab('') + ylab(expression(beta)) +
+  theme(panel.grid.minor = element_blank())
 pdf(paste0("Output/flu_plot_beta.pdf"), width = 3.3, height = 1.2)
 print(p3)
 dev.off()

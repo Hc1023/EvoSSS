@@ -443,6 +443,44 @@ pdf(paste0("Output/voc3_plot.pdf"), width = 2.5, height = 1.8)
 print(p)
 dev.off()
 
+p = ggplot() +
+  geom_point(data = fexpect0, 
+             aes(x = date, y = y, 
+                 group = group, color = group),
+             size = 0.4, shape = 16) +
+  geom_ribbon(data = plot_data, 
+              aes(x = date, group = group, 
+                  ymin = LowerCI, ymax = UpperCI, fill = group)) +  # Confidence interval
+  geom_line(data = plot_data, 
+            aes(x = date, y = Fitted, 
+                group = group, color = group), linewidth = 1) +
+  scale_color_manual(name="",
+                     values = alpha(values, 0.7)) +
+  scale_fill_manual(name="",
+                    values = alpha(values, 0.3)) +
+  scale_y_continuous(trans='log10') +
+  coord_cartesian(ylim = c(2,max(plot_data$Fitted))) +
+  theme_bw() +
+  scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="6 months"),
+               minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-11-01'), by ='1 month'),
+               date_labels = "%y-%b", expand = c(0, 0)) +
+  scale_y_continuous(trans='log10', 
+                     breaks = c(1,100,10000),
+                     labels = c(expression(10^0),
+                                expression(10^2),
+                                expression(10^4))) +
+  xlab('') + ylab('') + 
+  coord_cartesian(xlim = c(as.Date('2020-07-01'), as.Date('2021-10-1')),
+                  ylim = c(1,2*10^4)) +
+  theme(legend.position = 'none',
+        legend.background = element_rect(color = NA, fill = NA),
+        legend.key = element_blank(),
+        legend.key.size = unit(0.2, units = 'cm'),
+        panel.grid.minor = element_blank())
+pdf(paste0("Output/voc3_plot_mainfig.pdf"), width = 1.8, height = 1.3)
+print(p)
+dev.off()
+
 plot_data2 <- plot_data %>%
   group_by(x) %>%
   mutate(p = Fitted/sum(Fitted)) %>%
@@ -497,7 +535,7 @@ poolday = 30
 parsmat$date = poolday*(parsmat$Tcycle-1) + as.Date('2020-06-30') + 1
 df = parsmat
 df$date = as.Date(df$date)
-pd = 8
+pd = 0
 
 medians <- df %>%
   group_by(date, group) %>%

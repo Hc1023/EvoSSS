@@ -478,11 +478,14 @@ poolday = 30
 parsmat$date = poolday*(parsmat$Tcycle-1) + as.Date('2020-12-31') + 1
 df = parsmat
 df$date = as.Date(df$date)
-pd = 8
+pd = 0
 
 medians <- df %>%
   group_by(date, group) %>%
   summarize(median_y = median(y))
+
+values = brewer.pal(n=4, name = "Spectral")[1:2]
+values = rev(c(values[1], '#41424c'))
 p3 = ggplot() +
   geom_boxplot(data = df[df$group == 'contact',], 
                aes(x = date-pd, y = y, group = date),

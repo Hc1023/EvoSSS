@@ -30,7 +30,8 @@ if(F){
                  date_labels = "%Y-%b",
                  expand = c(0, 0)) + 
     xlab('') + ylab('') +
-    theme_bw() 
+    theme_bw() +
+    theme(panel.grid.minor = element_blank())
   pdf(paste0("Output/fc_flu.pdf"), width = 4.5, height = 1.4)
   print(p1)
   dev.off()
@@ -429,7 +430,8 @@ p = ggplot() +
         axis.text.y.left = element_text(colour = values[1]),
         axis.text.y.right = element_text(colour = values[2]),
         axis.title.y.left = element_text(color = values[1]),
-        axis.title.y.right = element_text(color = values[2]))
+        axis.title.y.right = element_text(color = values[2]),
+        panel.grid.minor = element_blank())
 
 pdf(paste0("Output/fc_plot.pdf"), width = 4.5, height = 1.8)
 print(p)
@@ -491,10 +493,47 @@ p3 = ggplot() +
                            as.Date('2024-07-01'))) +
   # scale_y_continuous(breaks = c(0.3,0.4)) +
   theme_bw() + xlab('') + ylab(expression(beta)) +
-  theme(plot.margin = unit(c(0.3,0.6,0,0), "cm"))
+  theme(plot.margin = unit(c(0.3,0.6,0,0), "cm"),
+        panel.grid.minor = element_blank())
 pdf(paste0("Output/fc_plot_beta.pdf"), width = 4.3, height = 1.2)
 print(p3)
 dev.off()
+
+p3 = ggplot() +
+  geom_boxplot(data = df[df$group == 'beta1',], 
+               aes(x = date-pd, y = y, group = date),
+               color = alpha(values[1],0.7), 
+               fill = alpha(values[1],0.3),
+               width = 6,
+               outlier.shape = NA) +
+  geom_boxplot(data = df[df$group == 'beta2',], 
+               aes(x = date+pd, y = y, group = date),
+               color = alpha(values[2],0.7), 
+               fill = alpha(values[2],0.3),
+               width = 6,
+               outlier.shape = NA) +
+  scale_x_date(breaks = seq(as.Date('2018-01-01'), as.Date('2024-11-01'), by="12 months"),
+               minor_breaks = seq(as.Date('2018-01-01'), as.Date('2024-11-01'), by ='1 month'),
+               date_labels = "%y-%b",
+               expand = c(0, 0)) +
+  geom_line(data = medians[medians$group == 'beta1',], 
+            aes(x = date - pd, y = median_y), 
+            color = values[1], 
+            linewidth = 0.4) +
+  geom_line(data = medians[medians$group == 'beta2',], 
+            aes(x = date + pd, y = median_y), 
+            color = values[2], 
+            linewidth = 0.4) +
+  coord_cartesian(xlim = c(as.Date('2019-12-21'),
+                           as.Date('2021-07-01'))) +
+  # scale_y_continuous(breaks = c(0.3,0.4)) +
+  theme_bw() + xlab('') + ylab(expression(beta)) +
+  theme(plot.margin = unit(c(0.3,0.6,0,0), "cm"),
+        panel.grid.minor = element_blank())
+pdf(paste0("Output/fc_plot_beta_mainfig.pdf"), width = 1.8, height = 1.2)
+print(p3)
+dev.off()
+
 p4 = ggplot() +
   geom_boxplot(data = df[df$group == 'contact',], 
                aes(x = date, y = y, group = date),

@@ -342,7 +342,8 @@ if(F){
                  date_labels = "%y-%b", expand = c(0, 0)) +
     coord_cartesian(xlim = c(as.Date('2020-01-01'), as.Date('2021-10-31')),
                     ylim = c(1,4*10^4)) +
-    theme(legend.position = 'none')
+    theme(legend.position = 'none',
+          panel.grid.minor = element_blank())
   
   pdf(paste0("Output/AB_mobility.pdf"), width = 2.5, height = 1.6)
   print(p)
