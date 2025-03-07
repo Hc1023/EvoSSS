@@ -314,10 +314,10 @@ for (n_simu in 1:1000) {
 
 simu_Onset = data.frame(bind_cols(df2_list))
 if(F){
-  save(fitlist, Onsets_mat_list, file = 'mpox.rdata')
-  save(simu_Onset, file = 'flu_plot.rdata')
+  save(simu_Onset, fitlist, Onsets_mat_list, file = 'mpox.rdata')
+  # save(simu_Onset, file = 'flu_plot.rdata')
   load('mpox.rdata')
-  load('flu_plot.rdata')
+  # load('flu_plot.rdata')
   data = determinant_fun(cond = F, ifsimu  = F, n_simu = n_simu)
 }
 
@@ -357,7 +357,8 @@ p = ggplot() +
                     values = alpha(values, 0.3)) +
   theme_bw() +
   theme(legend.position = "none",
-        plot.title = element_text(hjust = 0.5)) +
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.minor = element_blank()) +
   scale_x_date(breaks = seq(as.Date('2021-01-01'), as.Date('2025-05-01'), by="6 months"),
                minor_breaks = seq(as.Date('2021-01-01'), as.Date('2025-05-01'), by ='1 month'),
                date_labels = "%y-%b",
@@ -366,7 +367,7 @@ p = ggplot() +
   coord_cartesian(xlim = c(as.Date('2022-12-31'), as.Date('2024-08-31')),
                   ylim = c(0.1,8))
 
-pdf(paste0("Output/mpox_plot.pdf"), width = 2.3, height = 1.7)
+pdf(paste0("Output/mpox_plot.pdf"), width = 2.1, height = 1.5)
 print(p)
 dev.off()
 
@@ -425,15 +426,17 @@ p3 = ggplot() +
                   ylim = c(0.24,0.4)) +
   scale_y_continuous(breaks = c(0.3,0.4)) +
   theme_bw() + xlab('') + ylab(expression(beta)) +
-  theme(plot.margin = unit(c(0.3,0.6,0,0), "cm"))
-pdf(paste0("Output/mpox_plot_beta.pdf"), width = 2.06, height = 1.05)
+  theme(plot.margin = unit(c(0.3,0.6,0,0), "cm"),
+        panel.grid.minor = element_blank())
+pdf(paste0("Output/mpox_plot_beta.pdf"), width = 2.15, height = 0.95)
 print(p3)
 dev.off()
+
 p4 = ggplot() +
   geom_boxplot(data = df[df$group == 'contact',], 
                aes(x = date, y = y, group = date),
-               color = alpha('#3d3da1',0.9), 
-               fill = alpha('#3d3da1',0.3),
+               color = alpha('red',0.7), 
+               fill = alpha('red',0.3),
                width = 6,
                outlier.shape = NA) +
   scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2024-11-01'), by="6 months"),
@@ -442,17 +445,19 @@ p4 = ggplot() +
                expand = c(0, 0)) +
   geom_line(data = medians[medians$group == 'contact',], 
             aes(x = date, y = median_y), 
-            color = '#3d3da1', 
+            color = 'red', 
             linewidth = 0.4) +
   coord_cartesian(xlim = c(as.Date('2022-12-31'), 
                            as.Date('2024-08-01')),
                   ylim = c(10,110)) +
   theme_bw() + xlab('') + ylab('') +
-  theme(plot.margin = unit(c(0,0.6,0,0), "cm"))
+  theme(plot.margin = unit(c(0.3,0.6,0,0), "cm"),
+        panel.grid.minor = element_blank())
+
 
 
 p4
-pdf(paste0("Output/mpox_plot_Q.pdf"), width = 2, height = 1)
+pdf(paste0("Output/mpox_plot_Q.pdf"), width = 2.1, height = 0.95)
 print(p4)
 dev.off()
 

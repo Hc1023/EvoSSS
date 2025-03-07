@@ -38,7 +38,7 @@ p <- ggplot(data = df, aes(x = Var1, y = Freq, colour = Mutations)) +
                      labels = c(expression(10^0),expression(10^1),
                                 expression(10^2), expression(10^3),
                                 expression(10^4))) +
-  annotation_logticks(linewidth = 0.1) +
+  # annotation_logticks(linewidth = 0.1) +
   scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="6 months"),
                minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-11-01'), by ='1 month'),
                date_labels = "%y-%b") +

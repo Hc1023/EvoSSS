@@ -31,9 +31,9 @@ n = sapply(colnames(mat), function(n){
 })
 
 
-mat <- mat[, order(n)]
+mat1 <- mat[, order(n)]
 
-ht1 <- Heatmap(mat, cluster_columns = FALSE, cluster_rows = FALSE,
+ht1 <- Heatmap(mat1, cluster_columns = FALSE, cluster_rows = FALSE,
               rect_gp = gpar(col = "grey", lwd = 0.5),
               column_names_gp = grid::gpar(fontsize = 10),
               col=colorRamp2(c(0, 1), c("white", "firebrick3")),
@@ -42,15 +42,14 @@ ht1 <- Heatmap(mat, cluster_columns = FALSE, cluster_rows = FALSE,
                 labels = c("0", "0.5", "1")
               ),
               cell_fun = function(j, i, x, y, width, height, fill){
-                grid.text(if((colnames(mat)[j] %in% c('C8782T','T28144C') &&
-                              mat[i,j] > 0||mat[i,j] > 0.5)){
-                  sprintf("%.3f", mat[i,j])}, 
+                grid.text(if((colnames(mat1)[j] %in% c('C8782T','T28144C') &&
+                              mat1[i,j] > 0||mat1[i,j] > 0.5)){
+                  sprintf("%.3f", mat1[i,j])}, 
                   x, y, gp = gpar(fontsize = 10))
               },show_row_dend = FALSE,
               show_column_dend = FALSE)
 
-pdf(paste0("Output/vcf_231228.pdf"), width = 9, height = 3.8)
-print(ht1)
+
 
 for (i in 12:22) {
   df = df_all[df_all$sample== sampleid1[i,2],]
@@ -91,7 +90,8 @@ ht2 <- Heatmap(mat, cluster_columns = FALSE, cluster_rows = FALSE,
               },show_row_dend = FALSE,
               show_column_dend = FALSE)
 
-
+pdf(paste0("Output/vcf_231228.pdf"), width = 5, height = 2.6)
+print(ht1)
 print(ht2)
 dev.off()
 

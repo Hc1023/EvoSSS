@@ -43,12 +43,12 @@ p = ggplot(df.plot.all, aes(x = Var1, y = GR.median, colour = Mutations)) +
   theme_bw() +
   geom_polygon(data = df.polygon.all, aes(x = x, y = y, fill = Mutations),
                color = NA) +
-  scale_color_manual(name="",
+  scale_color_manual(name="Variant",
                      labels=c("A", "B", '8782 C>T', "28144 T>C"),
-                     values = alpha(values, 0.6)) +
-  scale_fill_manual(name="",
+                     values = alpha(values, 0.7)) +
+  scale_fill_manual(name="Variant",
                     labels=c("A", "B", '8782 C>T', "28144 T>C"),
-                    values = alpha(values, 0.2)) +
+                    values = alpha(values, 0.3)) +
   geom_line() + 
   geom_hline(yintercept = 0, linetype="dashed", size=0.3) +
   coord_cartesian(xlim = c(as.Date('2019-12-31'), as.Date('2021-10-31'))) +  
@@ -58,12 +58,12 @@ p = ggplot(df.plot.all, aes(x = Var1, y = GR.median, colour = Mutations)) +
                arrow = arrow(length = unit(0.1, "cm")), alpha = .7,
                inherit.aes = F) +
   theme(legend.key.size = unit(0.3, 'cm'),
-        legend.position = 'top',
+        legend.position = 'right',
         legend.key.spacing.x = unit(0.1,'cm'),
         legend.margin = margin(t = 0, r = 0, b = -2, l = 0)
   ) 
 p
-pdf(paste0("Output/gr_rate_bootstrap.pdf"), width = 2.8, height = 2.2)
+pdf(paste0("Output/gr_rate_bootstrap.pdf"), width = 3.7, height = 1.8)
 print(p)
 dev.off()
 

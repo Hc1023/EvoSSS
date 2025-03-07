@@ -7,19 +7,21 @@ library(scales)
 library(rstatix)
 
 df = read.csv("calu3_ct.csv")
-
+df = df[1:10,]
 get_df_long = function(df1){
   colnames(df1) = c('Strain', '0', '8', '24', '48', '72')
   
-  df2 = df1[-c(1:10), ] %>%
-    group_by(Strain) %>%
-    summarise_at(vars(-group_cols()), mean, na.rm = TRUE) %>%
-    as.data.frame()
+  # df2 = df1[-c(1:10), ] %>%
+  #   group_by(Strain) %>%
+  #   summarise_at(vars(-group_cols()), mean, na.rm = TRUE) %>%
+  #   as.data.frame()
   
-  df2 = rbind(df1[1:10, ], df2)
-  df2$Strain <- factor(c(rep('A', 6), rep('B', 4), rep('A+B', 6)),
-                       levels = c('A', 'B', 'A+B'))
-  
+  # df2 = rbind(df1[1:10, ], df2)
+  # df2$Strain <- factor(c(rep('A', 6), rep('B', 4), rep('A+B', 6)),
+  #                      levels = c('A', 'B', 'A+B'))
+  df2 = df1[1:10,]
+  df2$Strain <- factor(c(rep('A', 6), rep('B', 4)),
+                       levels = c('A', 'B'))
   df_long <- gather(df2, key = "Time",
                     value = "Ct",-Strain)
   df_long$Time = factor(df_long$Time, levels = unique(df_long$Time))
@@ -29,8 +31,11 @@ get_df_long = function(df1){
 
 get_signif = function(t) {
   subset_data <- df_long[df_long$Time == t, ]
-  anova_result <- aov(Ct ~ Strain, data = subset_data)
-  p_value = summary(anova_result)[[1]]$`Pr(>F)`[1]
+  # anova_result <- aov(Ct ~ Strain, data = subset_data)
+  # p_value = summary(anova_result)[[1]]$`Pr(>F)`[1]
+  # change to t-test
+  t_test_result <- t.test(Ct ~ Strain, data = subset_data)
+  p_value <- t_test_result$p.value
   signif_code = ifelse(p_value < 0.001, "***",
                        ifelse(p_value < 0.01, "**",
                               ifelse(
@@ -95,7 +100,7 @@ library(deSolve)
 library(rstan)
 
 df = read.csv("calu3_ct.csv")
-
+df = df[1:10,]
 timepoint = c(0,8,24,48,72)
 dat = data.frame()
 for (i in 1:length(timepoint)) {
@@ -105,14 +110,17 @@ for (i in 1:length(timepoint)) {
 }
 
 dat$timepoint = rep(timepoint, each = nrow(df))
-dat$group = rep(c(rep('A',6),rep('B',4),rep('A+B',18)), length(timepoint))
+# dat$group = rep(c(rep('A',6),rep('B',4),rep('A+B',18)), length(timepoint))
+dat$group = rep(c(rep('A',6),rep('B',4)), 
+                length(timepoint))
 
 dat$V = 2^(-dat$Ct + max(dat$Ct))
 dat$Vlog = log(dat$V)
 
 rvec = c()
+
 g = c('A','B','A+B')
-for (i in 1:3) {
+for (i in 1:2) {
   print(g[i])
   dat1 = dat[dat$timepoint %in% timepoint[1:3] & dat$group == g[i],]
   fit1 = lm(formula = Vlog ~ timepoint, data = dat1)
@@ -139,7 +147,7 @@ viral_model <- function(t, state, parameters) {
   return(list(dV1dt))
 }
 out_df = data.frame()
-for (i in 1:3) {
+for (i in 1:2) {
   state <- c(V1 = 1)
   times <- seq(0, 100, by = 1)
   params = c(r1 = rvec[i], K = 2*median(dat[dat$timepoint == 48,'V']))
@@ -153,7 +161,8 @@ out_df$Ct = -log2(out_df$V1) + max(dat$Ct)
 
 # Plotting
 pd = 0
-values = c(hue_pal()(3)[1], hue_pal()(3)[3],  '#aa85a6')
+# values = c(hue_pal()(3)[1], hue_pal()(3)[3],  '#aa85a6')
+values = c(hue_pal()(3)[1], hue_pal()(3)[3])
 out_df$group = factor(out_df$group, levels = g)
 dat$group = factor(dat$group, levels = c('B','A+B','A'))
 annotation_df$Time = c(0.6,8,26,48,72) + 21
