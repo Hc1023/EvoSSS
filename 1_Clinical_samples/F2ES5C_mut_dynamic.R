@@ -102,7 +102,7 @@ for (j in 1:length(set)) {
   dflist[[set[j]]] = df
 }
 
-pdf(file = 'Output/2ES5C_mut_coverage_dynamic.pdf', width = 3.2, height = 2.2)
+pdf(file = 'Output/F2ES5C_mut_coverage_dynamic.pdf', width = 3.2, height = 2.2)
 
 
 for (j in 1:length(dflist)) {
@@ -165,7 +165,7 @@ dev.off()
 
 
 
-pdf(file = 'Output/2ES5C_mut_coverage_dynamic_legend.pdf', width = 5, height = 2.2)
+pdf(file = 'Output/F2ES5C_mut_coverage_dynamic_legend.pdf', width = 5, height = 2.2)
 
 p = ggplot(data = df) + 
   geom_line(aes(x=x,y=y2, group=pos, color = pos)) +

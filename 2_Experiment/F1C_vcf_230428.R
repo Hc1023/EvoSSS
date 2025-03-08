@@ -4,11 +4,11 @@ library(tidyverse)
 library(ComplexHeatmap)
 library(circlize)
 
-df_all = read.csv("vcf_230428.csv")
+df_all = read.csv("F1C_vcf_230428.csv")
 names = c('ZJU_2', 'ZJU_8', 'ZJU_4', 'ZJU_5')
 names2 = c('A1','A2','B1','B2')
 
-pdf(paste0("Output/vcf_230428.pdf"), width = 5, height = 2.5)
+pdf(paste0("Output/F1C_vcf_230428.pdf"), width = 5, height = 2.5)
 
 for (i in 1:4) {
   ii = names2[i]

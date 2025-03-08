@@ -8,7 +8,7 @@ library(zoo)
 getplot = function(x, cell){
   
   names = c('A1-2','A1-4','A1-5','B1-1','B2-1')
-  df_all = read.csv("vcf_230428.csv")
+  df_all = read.csv("F1C_vcf_230428.csv")
   df = df_all[substr(df_all$sample, 1, 1) == x,]
   df$MUT = paste0(df$REF, df$POS, df$ALT)
   df1 = df[df$sample == paste0(x,1), c('MUT','percent')]
@@ -28,8 +28,8 @@ getplot = function(x, cell){
   plot_data0$Yao = rowMeans(plot_data[,2:3])
   plot_data0$Huang = rowMeans(plot_data[,4:ncol(plot_data)])
   
-  df_all = read.csv("vcf_231228.csv")
-  sampleid = read.csv("sampleid.csv")
+  df_all = read.csv("S5A_vcf_231228.csv")
+  sampleid = read.csv("S4B_sampleid.csv")
   sampleid = sampleid[-grep('[+]',sampleid$X),]
   samples = sampleid[grep(x,sampleid$X),]
   samples = samples[samples$cell == cell, ]
@@ -102,7 +102,7 @@ p2 = getplot(x = 'A', cell = 'Vero')
 p3 = getplot(x = 'B', cell = 'Calu')
 p4 = getplot(x = 'B', cell = 'Vero')
 
-pdf(paste0("Output/evolution_passage.pdf"), width = 5, height = 2.2)
+pdf(paste0("Output/F2BS4A_evolution_passage.pdf"), width = 5, height = 2.2)
 print(p1)
 print(p2)
 print(p3)

@@ -1,24 +1,16 @@
 rm(list = ls())
-library(data.table)
-library(tidyverse)
-library(readxl)
-library(ggpubr)
+library(ggplot2)   
+library(dplyr)
+library(tidyr)
+library(scales)
+library(deSolve)
 library(scales)
 library(rstatix)
 
-df = read.csv("calu3_ct.csv")
+df = read.csv("S4D_calu3_ct.csv")
 df = df[1:10,]
 get_df_long = function(df1){
   colnames(df1) = c('Strain', '0', '8', '24', '48', '72')
-  
-  # df2 = df1[-c(1:10), ] %>%
-  #   group_by(Strain) %>%
-  #   summarise_at(vars(-group_cols()), mean, na.rm = TRUE) %>%
-  #   as.data.frame()
-  
-  # df2 = rbind(df1[1:10, ], df2)
-  # df2$Strain <- factor(c(rep('A', 6), rep('B', 4), rep('A+B', 6)),
-  #                      levels = c('A', 'B', 'A+B'))
   df2 = df1[1:10,]
   df2$Strain <- factor(c(rep('A', 6), rep('B', 4)),
                        levels = c('A', 'B'))
@@ -27,13 +19,8 @@ get_df_long = function(df1){
   df_long$Time = factor(df_long$Time, levels = unique(df_long$Time))
   return(df_long)
 }
-
-
 get_signif = function(t) {
   subset_data <- df_long[df_long$Time == t, ]
-  # anova_result <- aov(Ct ~ Strain, data = subset_data)
-  # p_value = summary(anova_result)[[1]]$`Pr(>F)`[1]
-  # change to t-test
   t_test_result <- t.test(Ct ~ Strain, data = subset_data)
   p_value <- t_test_result$p.value
   signif_code = ifelse(p_value < 0.001, "***",
@@ -46,8 +33,6 @@ get_signif = function(t) {
                            signif_code)))
 }
 gene = c('ORF1ab', 'N')
-# pdf(paste0("Output/replication.pdf"), width = 2.7, height = 2.3)
-
 for (i in 1:1) {
   if (i==1) {
     df1 = df[, 1:6]
@@ -63,44 +48,8 @@ for (i in 1:1) {
   
   annotation_df <- data.frame(Time = names(x), Annotation = x, 
                               y = y$Ct)
-  values = c(hue_pal()(3)[1], hue_pal()(3)[3], '#aa85a6')
-  p = ggplot(df_long, aes(x = Time, y = Ct, fill = Strain)) +
-    geom_boxplot(aes(color = Strain)) +
-    geom_point(
-      position = position_jitterdodge(),
-      show.legend = FALSE,
-      aes(color = Strain),
-      alpha = 0.5,
-      size = 1
-    ) +
-    scale_color_manual(values = values) +
-    scale_fill_manual(values = alpha(values, 0.3)) +
-    labs(x = "Time points (h)",
-         y = paste(gene[i], "(Ct)")) +
-    theme_bw() +
-    theme(
-      legend.position = c(0.85, 0.7),
-      legend.background = element_rect(color = NA, fill = NA),
-      legend.key = element_blank()
-    ) +
-    annotate("text", x = annotation_df$Time, y = annotation_df$y,
-             label = x, vjust = -0.5, size = 2.8) +
-    coord_cartesian(ylim = c(12, 33.9))
-  
-  print(p)
-  
 }
-# dev.off()
 
-library(ggplot2)   
-library(dplyr)
-library(tidyr)
-library(scales)
-library(deSolve)   
-library(rstan)
-
-df = read.csv("calu3_ct.csv")
-df = df[1:10,]
 timepoint = c(0,8,24,48,72)
 dat = data.frame()
 for (i in 1:length(timepoint)) {
@@ -110,7 +59,6 @@ for (i in 1:length(timepoint)) {
 }
 
 dat$timepoint = rep(timepoint, each = nrow(df))
-# dat$group = rep(c(rep('A',6),rep('B',4),rep('A+B',18)), length(timepoint))
 dat$group = rep(c(rep('A',6),rep('B',4)), 
                 length(timepoint))
 
@@ -119,7 +67,7 @@ dat$Vlog = log(dat$V)
 
 rvec = c()
 
-g = c('A','B','A+B')
+g = c('A','B')
 for (i in 1:2) {
   print(g[i])
   dat1 = dat[dat$timepoint %in% timepoint[1:3] & dat$group == g[i],]
@@ -136,9 +84,7 @@ for (i in 1:2) {
 # [1] "B"
 # Estimate   Std. Error      t value     Pr(>|t|) 
 # 3.994415e-01 2.058320e-02 1.940619e+01 2.880877e-09 
-# [1] "A+B"
-# Estimate   Std. Error      t value     Pr(>|t|) 
-# 3.580951e-01 1.165525e-02 3.072394e+01 5.186158e-35 
+
 viral_model <- function(t, state, parameters) {
   V1 <- state[1]
   r1 <- parameters["r1"]
@@ -161,10 +107,9 @@ out_df$Ct = -log2(out_df$V1) + max(dat$Ct)
 
 # Plotting
 pd = 0
-# values = c(hue_pal()(3)[1], hue_pal()(3)[3],  '#aa85a6')
 values = c(hue_pal()(3)[1], hue_pal()(3)[3])
 out_df$group = factor(out_df$group, levels = g)
-dat$group = factor(dat$group, levels = c('B','A+B','A'))
+dat$group = factor(dat$group, levels = c('B','A'))
 annotation_df$Time = c(0.6,8,26,48,72) + 21
 annotation_df$y = c(31,28.6,20,13,11.6)
 p1 = ggplot() +
@@ -181,11 +126,6 @@ p1 = ggplot() +
                    group = timepoint), 
                color = values[2], fill = alpha(values[2], 0.3),
                outlier.shape = NA, width = 4) +
-  # geom_boxplot(data = dat[dat$group == 'A+B',], 
-  #              aes(x = timepoint, y = Ct, 
-  #                  group = timepoint), 
-  #              color = values[3], fill = alpha(values[3], 0.3),
-  #              outlier.shape = NA, width = 1.9*pd) +
   geom_jitter(data = dat[dat$group!='A+B',], 
               aes(x = timepoint, y = Ct, color = group, group = group),
               alpha = 0.5,
@@ -207,7 +147,7 @@ p1 = ggplot() +
            label = x, vjust = -0.5, size = 2.8)
 p1
 
-pdf(paste0("Output/replication_fit.pdf"), width = 2.5, height = 2)
+pdf(paste0("Output/S4D_replication_fit.pdf"), width = 2.5, height = 2)
 print(p1)
 dev.off()
 

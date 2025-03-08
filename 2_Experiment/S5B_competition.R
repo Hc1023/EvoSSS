@@ -4,8 +4,8 @@ library(tidyverse)
 library(ggpubr)
 library(zoo)
 
-df_all = read.csv("vcf_231228.csv")
-sampleid = read.csv("sampleid.csv")
+df_all = read.csv("S5A_vcf_231228.csv")
+sampleid = read.csv("S4B_sampleid.csv")
 sampleid[, 2][sampleid[, 2] == ""] <- NA
 sampleid[,2] = na.locf(sampleid[,2])
 
@@ -37,7 +37,7 @@ myfun = function(x){
 }
 
 
-pdf(paste0("Output/competition.pdf"), width = 4.3, height = 2.8)
+pdf(paste0("Output/S5B_competition.pdf"), width = 4.3, height = 2.8)
 
 for (i in c('Vero', 'Calu')) {
   df = myfun(i)

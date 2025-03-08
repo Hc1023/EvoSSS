@@ -4,7 +4,7 @@ library(tidyverse)
 library(ComplexHeatmap)
 library(circlize)
 
-df_all = read.csv("vcf_231228.csv")
+df_all = read.csv("S5A_vcf_231228.csv")
 sampleid = read.csv("sampleid.csv")
 sampleid1 = sampleid[sampleid$original != '',c(1,2,3)]
 
@@ -90,7 +90,7 @@ ht2 <- Heatmap(mat, cluster_columns = FALSE, cluster_rows = FALSE,
               },show_row_dend = FALSE,
               show_column_dend = FALSE)
 
-pdf(paste0("Output/vcf_231228.pdf"), width = 5, height = 2.6)
+pdf(paste0("Output/S5A_vcf_231228.pdf"), width = 5, height = 2.6)
 print(ht1)
 print(ht2)
 dev.off()

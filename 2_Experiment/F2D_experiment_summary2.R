@@ -5,11 +5,10 @@ library(ggpubr)
 library(zoo)
 library(ggthemes)
 library(scales)
-library("ggsci")
+library(ggsci)
 
-
-df_all = read.csv("vcf_231228.csv")
-sampleid = read.csv("sampleid.csv")
+df_all = read.csv("S5A_vcf_231228.csv")
+sampleid = read.csv("S4B_sampleid.csv")
 sampleid[, 2][sampleid[, 2] == ""] <- NA
 sampleid[,2] = na.locf(sampleid[,2])
 
@@ -43,7 +42,6 @@ myfun = function(x){
 hlist = list()
 for (i in c('Vero', 'Calu')) {
   df = myfun(i)
-  # df =df[df$Time %in% unique(df$Time)[1:4],]
   df = df %>%
     group_by(Time, Strain, Replicate) %>%
     summarize(VAF = mean(VAF)) 
@@ -84,7 +82,7 @@ for (i in c('Vero', 'Calu')) {
     coord_cartesian(ylim = c(0,1))
 }
 
-pdf(paste0("Output/experiment_summary2.pdf"), width = 3.2, height = 1.6)
+pdf(paste0("Output/F2D_experiment_summary2.pdf"), width = 3.2, height = 1.6)
 print(hlist[[1]])
 print(hlist[[2]])
 dev.off()
