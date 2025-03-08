@@ -12,7 +12,7 @@ Ttree$edge.length <- Ttree$edge.length/0.0008
 
 Ttree.tip.label <- data.frame(Ttree$tip.label)
 
-nextclade <- read.table(file = 'nextclade_qc.tsv', 
+nextclade <- read.table(file = 'S3B_nextclade_qc.tsv', 
                         sep = '\t', header = TRUE, quote = "")
 
 nextclade <- nextclade[nextclade$seqName %in% Ttree$tip.label, c(1,2,3,16)]
