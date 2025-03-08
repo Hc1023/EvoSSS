@@ -26,13 +26,17 @@ The evoSSS model integrates the evoSIR model within the Seeding-Spreading framew
 The evoSIR model incorporates both the intra- and inter-host modeling, based on the classical Susceptible-Infected-Removed (SIR) model, to simulate the competitive dynamic of infectious diseases.
 
 The model intra-host incorporates terms for the replication rate, competition during co-infection, and viral evolution. The intra-host model of multiple competing variants 1, 2, …, J follows the ordinary differential equations (ODEs):
+
 $$\frac{dV_i}{dt} = r_i V_i \left(1 - \frac{V_i + \sum_{j=1}^{J} \alpha_{ij} V_j}{K} \right)$$
+
 where $V_i$ and $V_j$ are the titers of variants $i$ and $j$, and $r_i$ is the replication rate of variant $i$. $\alpha_{ij}$ represents the inhibitory effect of variant $j$ on variant $i$, and $K$ is the total viral load capacity.
 
 For the inter-host component, we extended the SIR model to include compartments for individuals infected with each variant. $S$ is the number of susceptible individuals correlated with the spreading capacity $Q$, which represents the susceptible contacts per infected individual; $I_j$ is the individuals infected by variant $j$, and $R$ is the number of removed individuals. $N$ is the total population ($N=S+I_1+I_2+R$). The inter-host model follows:
+
 $$
 \frac{dS}{dt} = -\sum_{j=1}^{J} \frac{\beta_j S I_j}{N},\ \frac{dI_j}{dt} = \sum_{j=1}^{J} \frac{\beta_j S I_j}{N} - \gamma I_j,\ \frac{dR}{dt} = \gamma \sum_{j=1}^{J} I_j
 $$
+
 where $\beta_j\propto V_j/\sum_{j=1}^J V_j$ is the transmission rate for variant $j$, $\gamma$ is the removal (recovery or death) rate for infected individuals. The expected number of new cases for variant $j$ is $\beta_j SI/N$ per day.
 
 ### The evoSIR-Seeding-Spreading (evoSSS) model
@@ -68,7 +72,6 @@ Specifically, the simulation in this paper used 200 days and an interspace of 30
 ## 5. evoSSS_application
 
 To address potential future epidemic outbreaks, we aim to use the evoSSS model to simulate and predict the competition and transmission dynamics of infectious diseases under various scenarios. Spreading capacity, influenced by factors such as social interventions, seasonal outbreaks, and the nature of the virus, limits the number of susceptible individuals. Transmission rates, representing the competitive strength of the variants, serve as early warnings for potentially high-risk variants 
-
 
 [5_evoSSS_application](./5_evoSSS_application/)
 
