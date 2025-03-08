@@ -3,23 +3,25 @@ Codes and intermediary files for reproducing figures from “Multi-Scale Modelin
 
 ## 1. Viral analysis of early COVID-19 patients
 
-Intra-host diversity and mutation dynamics from a collection of 149 early clinical samples from 66 patients.
-
 [1_Clinical_samples](./1_Clinical_samples/)
+
+Intra-host diversity and mutation dynamics from a collection of 149 early clinical samples from 66 patients.
 
 ## 2. Infection and competition experiment
 
-Infection and competition dynamics in multiple cell lines.
-
 [2_Experiment](./2_Experiment/)
+
+Infection and competition dynamics in multiple cell lines.
 
 ## 3. Epidemiological analysis
 
-Epidemiological features of the lineages A and B using ~5.5 million high-quality sequences from the GISAID database.
-
 [3_Epidemiological_analysis](./3_Epidemiological_analysis/)
 
+Epidemiological features of the lineages A and B using ~5.5 million high-quality sequences from the GISAID database.
+
 ## 4. evoSSS_model
+[4_evoSSS_model](./4_evoSSS_model/)
+
 The evoSSS model integrates the evoSIR model within the Seeding-Spreading framework.
 
 ### evoSIR model
@@ -78,11 +80,12 @@ $$
 
 Specifically, the simulation in this paper used 200 days and an interspace of 30 days for each seeding-spreading cycle. 
 
-[4_evoSSS_model](./4_evoSSS_model/)
 
 ## 5. evoSSS_application
 
+[5_evoSSS_application](./5_evoSSS_application/)
+
 To address potential future epidemic outbreaks, we aim to use the evoSSS model to simulate and predict the competition and transmission dynamics of infectious diseases under various scenarios. Spreading capacity, influenced by factors such as social interventions, seasonal outbreaks, and the nature of the virus, limits the number of susceptible individuals. Transmission rates, representing the competitive strength of the variants, serve as early warnings for potentially high-risk variants 
 
-[5_evoSSS_application](./5_evoSSS_application/)
+
 
