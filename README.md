@@ -43,6 +43,7 @@ where $\beta_j\propto V_j/\sum_{j=1}^J V_j$ is the transmission rate for variant
 The evoSIR-Seeding-Spreading (evoSSS) model integrated a Seeding-Spreading framework with the evoSIR model. The transition from one cycle to the next is represented by the composition of the seeding process and the evoSIR model:
 $$F=f_{\text{evoSIR}(Q,\beta)}\cdot f_\text{seed}$$
 This composition function is applied to the matrix of infectious individuals, transforming the state from cycle $n$ to $n+1$:
+
 $$F: I^n\rightarrow I^{n+1}$$
 
 where $I^n$ is the matrix representing the time sequence of infectious individuals for variants $1,2,…,J$. The seeding process generates infectious seeds $D=[D_1,D_2,…,D_J]$ of cycle $n+1$ from infectious individuals $I=[I_1,I_2,…,I_J]$ of cycle $n$,
@@ -50,6 +51,7 @@ where $I^n$ is the matrix representing the time sequence of infectious individua
 $$f_{\text{seed}}: I^n\rightarrow D^{n+1}$$
 
 utilizes a mobility matrix $M=(m_{t_i,t_j})$ to simulate the generation of epidemic hotspots from the infectious seeds at different time points. The elements of the mobility matrix are defined as
+
 $$
 m(t_i, t_j) =
 \begin{cases} 
@@ -57,14 +59,21 @@ m(t_i, t_j) =
 \in [0,1], & t_i \geq t_j
 \end{cases}
 $$
+
 This process generates infectious seeds
+
 $$D^{n+1}=M*I^n$$
+
 These infectious seeds create epidemic hotspots at each time point. Each hotspot h undergoes the evoSIR modeling 
+
 $$f_{\text{evoSIR}(Q,\beta)}: D^{n+1}\rightarrow I^{n+1,h}$$
+
 where the spreading capacity $Q$ determines the susceptible individuals per seed, while transmission rates $\beta=[\beta_1,\beta_2,…,\beta_J]$ indicate the variant risk. The epidemic outcomes of these hotspots are then aggregated to represent the global pandemic state for the next epidemic cycle:
+
 $$
 I_j^{(n+1)}(t) = \sum_{h \in \text{Hotspots}} I_j^{(n+1,h)}(t), \quad j \in \{1,2,\dots,J\}.
 $$
+
 Specifically, the simulation in this paper used 200 days and an interspace of 30 days for each seeding-spreading cycle. 
 
 [4_evoSSS_model](./4_evoSSS_model/)
