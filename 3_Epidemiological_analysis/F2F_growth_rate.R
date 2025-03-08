@@ -1,8 +1,9 @@
+rm(list = ls())
 library(dplyr)
 library(ggplot2)
 library(scales)
 
-load("GRrate.RData")
+load("F2F_GRrate.RData")
 
 ## Growth rate curve  (Bootstrapping)
 
@@ -63,7 +64,7 @@ p = ggplot(df.plot.all, aes(x = Var1, y = GR.median, colour = Mutations)) +
         legend.margin = margin(t = 0, r = 0, b = -2, l = 0)
   ) 
 p
-pdf(paste0("Output/gr_rate_bootstrap.pdf"), width = 3.7, height = 1.8)
+pdf(paste0("Output/F2F_gr_rate_bootstrap.pdf"), width = 3.7, height = 1.8)
 print(p)
 dev.off()
 

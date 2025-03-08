@@ -7,7 +7,7 @@ library(ggtreeExtra)
 library(ggnewscale)
 library(stringr)
 
-ddf = read.csv('sarsrcov.csv')
+ddf = read.csv('S1A_sarsrcov.csv')
 id = ddf[,c(1,22)]
 
 seq = unlist(strsplit('TTTAGCCAG', split = ""))
@@ -36,7 +36,7 @@ df2$col = 'blue'
 df2$col[df2$mut %in% seqloc2[4:6]] <- 'red'
 
 
-Ttree <- read.tree('sarsrcov_run_3_tr.phy.treefile')
+Ttree <- read.tree('S1A_sarsrcov_run_3_tr.phy.treefile')
 # clock rate = 0.0008
 tiplabel = Ttree$tip.label
 idx <- sapply(tiplabel, function(x){
@@ -64,7 +64,7 @@ rotate(p1,72)
 # flip(p1, 54, 60) %>% flip(8,9) %>% flip(61,83)
 
 p1 = rotate(p,72)
-p1
+# p1
 hexp1 = 6.2
 hexp2 = 10
 pw = 1
@@ -122,11 +122,9 @@ p2 = p1 +
     values=alpha(c("black", "red"), 1),
     guide="none") 
 
-p2
+# p2
 
-
-
-pdf(file = 'Output/SARSrCoV.pdf', width = 8, height = 8)
+pdf(file = 'Output/S1A_SARSrCoV.pdf', width = 8, height = 8)
 print(p2)
 dev.off()
 

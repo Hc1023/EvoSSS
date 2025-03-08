@@ -6,7 +6,7 @@ library(ape)
 library(scales)
 library(ggnewscale)
 
-Ttree <- read.tree('tree.nwk')
+Ttree <- read.tree('S3B_tree.nwk')
 # clock rate = 0.0008
 Ttree$edge.length <- Ttree$edge.length/0.0008
 
@@ -43,13 +43,11 @@ Ttree <- groupOTU(Ttree, cls)
 
 values = c(hue_pal()(3)[1], hue_pal()(3)[3], hue_pal()(3)[2], hue_pal()(4)[4])
 
-
-
 ## GISAID continents
 
-metadata <- read.table(file = 'strains4.tsv', 
+metadata <- read.table(file = 'S3B_strains4.tsv', 
                        sep = '\t', header = TRUE, quote = "")
-metadata2 <- read.table(file = 'metadata_ref.tsv', 
+metadata2 <- read.table(file = 'S3B_metadata_ref.tsv', 
                         sep = '\t', header = TRUE, quote = "")
 for (i in 1:nrow(metadata)) {
   metadata[i,1] = paste(strsplit(metadata[i,1], '/')[[1]][-1], collapse = "/")
@@ -79,13 +77,13 @@ options(ignore.negative.edge=TRUE)
 p <- ggtree(Ttree, mrsd = max(c(metadata$date,metadata2$date)), as.Date = T, 
             aes(color = group), size = 0.4) %<+% 
   sample_dat + theme_tree2() +
-  scale_color_manual(name="Clades",
+  scale_color_manual(name="Variant",
                      labels=c("Lineage A", "Lineage B", '8782 C>T', "28144 T>C"),
                      values = values) +
   new_scale_color() + 
   new_scale_fill() +
   geom_tippoint(mapping = aes(fill = region), size = 3, shape=21) +
-  scale_fill_manual(name="Regions", 
+  scale_fill_manual(name="Region", 
                     values=alpha(values2, alpha = 0.9)) + 
   xlab('Date (2019-2022)') +
   scale_x_date(date_labels = "%y %b", breaks = "3 month", minor_breaks = "1 month") +
@@ -118,11 +116,7 @@ p <- ggtree(Ttree, mrsd = max(c(metadata$date,metadata2$date)), as.Date = T,
   guides(shape = guide_legend(order = 1), 
          fill = guide_legend(order = 2, override.aes = list(size=5)))
 
-
-p
-
-
-pdf(file = 'Output/phy_tree.pdf', width = 9, height = 13)
+pdf(file = 'Output/S3B_phy_tree.pdf', width = 9, height = 13)
 print(p)
 dev.off()
 

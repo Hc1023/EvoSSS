@@ -3,8 +3,7 @@ library(dplyr)
 library(ggplot2)
 library(scales)
 
-
-df = read.csv('Covid19CasesGISAID.csv')
+df = read.csv('F1D_Covid19CasesGISAID.csv')
 df$Var1 = as.Date(df$Var1)
 df$Mutations = factor(df$Mutations, levels = unique(df$Mutations))
 
@@ -65,7 +64,7 @@ p <- ggplot(data = df, aes(x = Var1, y = Freq, colour = Mutations)) +
 p
 
 
-pdf(paste0("Output/gr.pdf"), width = 3, height = 2.5)
+pdf(paste0("Output/F1D_gr.pdf"), width = 3, height = 2.5)
 print(p)
 dev.off()
 
