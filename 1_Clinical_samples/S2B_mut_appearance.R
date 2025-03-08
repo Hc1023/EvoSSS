@@ -3,8 +3,8 @@ library(tidyverse)
 library(ggplot2)
 library(ggpubr)
 
-dattmp = read.csv("clinical_info.csv")
-load(file = 'clinical_mutation.Rdata')
+dattmp = read.csv("F1A_clinical_info.csv")
+load(file = 'S2B_clinical_mutation.Rdata')
 
 ## count in patients
 for (i in 1:nrow(dat_mut)) {
@@ -74,12 +74,12 @@ p3 = dat_mut_table  %>%
 
 ### Output
 
-pdf(file = paste0('Output/mutation_appearance.pdf'), 
+pdf(file = paste0('Output/S2B_mutation_appearance.pdf'), 
     width = 3.2, height = 3.4)
 print(p1)
 dev.off()
 
-pdf(file = paste0('Output/mutation_appearance_2.pdf'), 
+pdf(file = paste0('Output/S2B_mutation_appearance_2.pdf'), 
     width = 3.2, height = 1.7)
 print(p2)
 print(p3)

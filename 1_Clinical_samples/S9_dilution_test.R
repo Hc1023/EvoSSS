@@ -5,7 +5,7 @@ library(ComplexHeatmap)
 library(circlize)
 
 ############ Amplicon Sequencing ########
-load(file = 'dilution_amplicon.Rdata')
+load(file = 'S9_dilution_amplicon.Rdata')
 
 plot_data <- lst.21.1.8[[1]]
 for (i in 2:8) {
@@ -68,13 +68,13 @@ ht2<-Heatmap(mat2, cluster_columns = FALSE, cluster_rows = FALSE,
              show_column_dend = FALSE)
 ht_list =  ht0 %v% ht1 %v% ht2
 
-pdf("Output/dilution_amplicon.pdf", width = 10, height = 5)
+pdf("Output/dilution_amplicon_S9A.pdf", width = 10, height = 5)
 print(ht_list)
 dev.off()
 
 
 ############ Capture and Metagenomic Sequencing ########
-load(file = 'dilution_capture.Rdata')
+load(file = 'S9_dilution_capture.Rdata')
 
 plot_data <- lst.20.9.24[[1]]
 plot_data <- full_join(plot_data, lst.20.9.24[[2]], by = "POS")
@@ -152,7 +152,7 @@ ht2<-Heatmap(mat2, cluster_columns = FALSE, cluster_rows = FALSE,
 
 ht_list =  ht0 %v% ht1 %v% ht2
 
-pdf("Output/dilution_capture.pdf", width = 10, height = 3)
+pdf("Output/dilution_capture_S9B.pdf", width = 10, height = 3)
 print(ht_list)
 dev.off()
 

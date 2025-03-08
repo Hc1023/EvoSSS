@@ -7,11 +7,11 @@ library(scales)
 library(ggnewscale)
 library(RColorBrewer)
 
-Ttree <- read.tree('tree_early.nwk')
+Ttree <- read.tree('F1A_tree_early.nwk')
 # clock rate = 0.0008
 Ttree$edge.length <- Ttree$edge.length/0.0008
 
-dat = read.csv("clinical_info.csv")
+dat = read.csv("F1A_clinical_info.csv")
 for (i in 1:nrow(dat)) {
   a <- dat[i,]
   b <- strsplit(a$Date, '/')[[1]]
@@ -31,7 +31,7 @@ sample_dat[nrow(sample_dat)+1,] <- c("Wuhan-Hu-1/2019", "Wuhan-Hu-1", 'Black')
 Ttree.drop <- drop.tip(phy = Ttree,
                        tip = Ttree$tip[!Ttree$tip %in% sample_dat$tip.lable])
 
-nextclade <- read.table(file = 'nextclade_qc_early.tsv', 
+nextclade <- read.table(file = 'F1A_nextclade_qc_early.tsv', 
                         sep = '\t', header = TRUE)
 nextclade <- nextclade[nextclade$seqName %in% Ttree.drop$tip.label, c(1,2,3,16)]
 
@@ -76,11 +76,11 @@ options(ignore.negative.edge=TRUE)
 
 sizetext = 4
 
-c40 = c('black', alpha(c('grey', rainbow(38)), 0.6))
+# c40 = c('black', alpha(c('grey', rainbow(38)), 0.6))
 
-show_col(c40)
-display.brewer.pal(12, 'Set3')
-values2 =  brewer.pal(12, 'Set3')[-9]
+# show_col(c40)
+# display.brewer.pal(12, 'Set3')
+# values2 =  brewer.pal(12, 'Set3')[-9]
 values2 = c("#8dd3c7", "#acdfc2", "#cbebbc", "#e9f7b7", "#faf9b6", "#e8e7c1", "#d7d4cb", 
   "#c5c1d6", "#c8b1c9", "#d8a1ad", "#e99191", "#f98275", "#dd8c8a", "#bc99a4", 
   "#9ba6be", "#87b1cd", "#a9b2ae", "#cab390", "#ecb471", "#f3ba63", "#dfc565", 
@@ -88,7 +88,7 @@ values2 = c("#8dd3c7", "#acdfc2", "#cbebbc", "#e9f7b7", "#faf9b6", "#e8e7c1", "#
   "#d8a1ce", "#c68cc3", "#be8cbe", "#c2a8c0", "#c6c5c2", "#cbe2c4", "#d6ebb5", 
   "#e3ec9d", "#f1ec86", "#ffed6f")
 c40 = c(alpha('#000435',0.9), alpha('grey',0.2), alpha(values2,0.9))
-show_col(c40)
+# show_col(c40)
 
 p = ggtree(Ttree.drop, mrsd = '2020-03-01', as.Date = T, show.legend = F, 
        layout = "circular", aes(color = group), size = 0.3) %<+% 
@@ -109,6 +109,6 @@ p = ggtree(Ttree.drop, mrsd = '2020-03-01', as.Date = T, show.legend = F,
   scale_fill_manual(name='Patients', 
                     values=c40)
 
-pdf(file = 'Output/tree_clinical_only.pdf', width = 4, height = 4)
+pdf(file = 'Output/F1A_tree_clinical_only.pdf', width = 4, height = 4)
 print(p)
 dev.off()

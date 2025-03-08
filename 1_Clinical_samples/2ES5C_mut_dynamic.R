@@ -8,8 +8,8 @@ library(RColorBrewer)
 library(ggnewscale)
 library(tidyverse)
 library(ggpubr)
-
-df3 = read.csv('clinical_coverage.csv')
+library(scatterpie)
+df3 = read.csv('F2A_clinical_coverage.csv')
 df1 = df3[1:149,]
 df2 = df3[149+1:149,]
 df2 <- df2[order(match(df2$Sample, df1$Sample)), ]
@@ -71,11 +71,9 @@ yy = sapply(ddf[1:10,1], function(x){
 
 df3[df3$Sample %in% names(yy),'clade'] = rep(yy,2)
 
-
-
 df3$rad = log10(df3$total_reads)/10
 df3$rad[df3$rad == -Inf] = 0.1
-library(scatterpie)
+
 values = c(hue_pal()(3)[1], hue_pal()(3)[3])
 set = names(table(df3$Names_ID))[table(df3$Names_ID) > 2]
 dflist = list()
@@ -104,7 +102,7 @@ for (j in 1:length(set)) {
   dflist[[set[j]]] = df
 }
 
-pdf(file = 'Output/mut_coverage_dynamic.pdf', width = 3.2, height = 2.2)
+pdf(file = 'Output/2ES5C_mut_coverage_dynamic.pdf', width = 3.2, height = 2.2)
 
 
 for (j in 1:length(dflist)) {
@@ -167,7 +165,7 @@ dev.off()
 
 
 
-pdf(file = 'Output/mut_coverage_dynamic_legend.pdf', width = 5, height = 2.2)
+pdf(file = 'Output/2ES5C_mut_coverage_dynamic_legend.pdf', width = 5, height = 2.2)
 
 p = ggplot(data = df) + 
   geom_line(aes(x=x,y=y2, group=pos, color = pos)) +

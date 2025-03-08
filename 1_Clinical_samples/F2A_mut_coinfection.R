@@ -7,7 +7,7 @@ library(knitr)
 library(RColorBrewer)
 library(ggsci)
 
-df = read.csv('clinical_coverage.csv')
+df = read.csv('F2A_clinical_coverage.csv')
 
 df1 = df[df$pos == 8782,
          c('Sample', 'Names_ID','total_reads',
@@ -48,7 +48,7 @@ p = ggplot(data = dfa,
             label = '.', inherit.aes = F,
             size = 3, vjust = -0.2)
 p
-pdf(file = 'Output/num_reads_8782.pdf', width = 3.6, height = 1.8)
+pdf(file = 'Output/F2A_num_reads_8782.pdf', width = 3.6, height = 1.8)
 print(p)
 dev.off()
 
@@ -72,7 +72,7 @@ p = ggplot(data = dfa_sub,
   geom_text(data = dftmp1_sub, aes(x = Sample, y = total_reads),
             label = '.', inherit.aes = F, size = 3, vjust = -0.2)
 p
-pdf(file = 'Output/num_reads_8782_sub.pdf', width = 1.7, height = 1)
+pdf(file = 'Output/F2A_num_reads_8782_sub.pdf', width = 1.7, height = 1)
 print(p)
 dev.off()
 
@@ -98,7 +98,7 @@ p = ggplot(data = dfb, mapping = aes(x = Sample, y = Counts, fill = Mutations)) 
   geom_text(data = dfbtmp2, aes(x = Sample, y = total_reads),
             label = '.', inherit.aes = F,size = 3, vjust = -0.2)
 p
-pdf(file = 'Output/num_reads_28144.pdf', width = 3.6, height = 1.8)
+pdf(file = 'Output/F2A_num_reads_28144.pdf', width = 3.6, height = 1.8)
 print(p)
 dev.off()
 
@@ -120,6 +120,6 @@ p = ggplot(data = dfb_sub, mapping = aes(x = Sample, y = Counts, fill = Mutation
   geom_text(data = dfbtmp1_sub, aes(x = Sample, y = total_reads),
             label = '.', inherit.aes = F, size = 3, vjust = -0.2)
 p
-pdf(file = 'Output/num_reads_28144_sub.pdf', width = 1.2, height = 1.2)
+pdf(file = 'Output/F2A_num_reads_28144_sub.pdf', width = 1.2, height = 1.2)
 print(p)
 dev.off()

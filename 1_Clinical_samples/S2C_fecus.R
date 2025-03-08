@@ -6,9 +6,9 @@ library(ComplexHeatmap)
 library(circlize)
 library(RColorBrewer)
 
-dat= read.csv("clinical_info.csv")
-load(file = 'clinical_mutation.Rdata')
-cd = readxl::read_excel('mut_cd.xlsx')
+dat= read.csv("F1A_clinical_info.csv")
+load(file = 'S2B_clinical_mutation.Rdata')
+cd = readxl::read_excel('S2C_mut_cd.xlsx')
 cd = data.frame(cd[1:46,c('SampleID','POS','REF','ALT','Freq')])
 
 for (i in 1:nrow(dat)) {
@@ -73,8 +73,8 @@ ht_opt$message = FALSE
 g$Patients = rep(letters[1:9],each =2)
 g$Source = c(rep('Sputum', 10), rep('Pharynx',2), rep(c('Sputum','Feces'), 3))
 
-brewer.pal(n = 3, name = "RdBu")
-display.brewer.pal(n = 6, name = 'Dark2')
+# brewer.pal(n = 3, name = "RdBu")
+# display.brewer.pal(n = 6, name = 'Dark2')
 
 v = alpha(brewer.pal(n = 9, name = 'Set1'), 0.9)
 names(v) = letters[1:9]
@@ -99,7 +99,7 @@ p = Heatmap(df, cluster_columns = FALSE, cluster_rows = FALSE,
         show_column_dend = FALSE,
         row_names_gp = gpar(col = rep(c('#1f4c7c','#a62b17'), 9)))
 p
-pdf("Output/feces.pdf", width = 12, height = 4)
+pdf("Output/S2C_feces.pdf", width = 12, height = 4)
 print(p)
 dev.off()
 

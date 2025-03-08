@@ -3,10 +3,10 @@ library(data.table)
 library(tidyverse)
 library(ggrepel)
 
-dattmp = read.csv("clinical_info.csv")
-snpdate_all = read.csv('snpdate_seq3gr10.tsv', sep = '\t')
+dattmp = read.csv("F1A_clinical_info.csv")
+snpdate_all = read.csv('S2A_snpdate_seq3gr10.tsv', sep = '\t')
 
-load(file = 'clinical_mutation.Rdata')
+load(file = 'S2B_clinical_mutation.Rdata')
 ## count in patients
 for (i in 1:nrow(dat_mut)) {
   tmp <-  dat_mut[i,]
@@ -32,10 +32,11 @@ df$Date = as.Date(df$Date)
 
 p = ggplot(df, aes(Date, Freq)) + geom_point(alpha = 0.6) + 
   theme_classic() +
-  labs(y = 'Number of patients (>5)\n (VAF>0.05)', x='Emergence date in GISAID (October 8,2022)') +
+  labs(y = 'Number of patients (>5)\n (VAF>0.05)', 
+       x='Emergence date in GISAID (Accessed by October 8, 2022)') +
   scale_x_date(date_labels = "%y %b", breaks = "3 month") +
   geom_text_repel(aes(label=Mut)) 
 p
-pdf(file = 'Output/mut_appearance_occur.pdf', width = 6, height = 2.7)
+pdf(file = 'Output/S2A_mut_appearance_occur.pdf', width = 6, height = 2.7)
 print(p)
 dev.off()

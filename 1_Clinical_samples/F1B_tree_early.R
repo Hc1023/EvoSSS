@@ -7,11 +7,11 @@ library(scales)
 library(ggnewscale)
 library(tidyverse)
 
-Ttree <- read.tree('tree_early.nwk')
+Ttree <- read.tree('F1A_tree_early.nwk')
 # clock rate = 0.0008
 Ttree$edge.length <- Ttree$edge.length/0.0008
 
-nextclade <- read.table(file = 'nextclade_qc_early.tsv', 
+nextclade <- read.table(file = 'F1A_nextclade_qc_early.tsv', 
                         sep = '\t', header = TRUE)
 nextclade <- nextclade[nextclade$seqName %in% Ttree$tip.label, c(1,2,3,16)]
 
@@ -25,7 +25,7 @@ for (i in 1:nrow(nextclade)) {
 }
 
 
-table(nextclade[,'cls']) 
+# table(nextclade[,'cls']) 
 
 # V clade all in lineage B
 # Haplotype: artifacts
@@ -37,7 +37,7 @@ cls <- list(Clade_1=nextclade$seqName[nextclade$cls == 'A'],
 Ttree.drop <- groupOTU(Ttree.drop, cls)
 
 ## GISAID continents
-metadata <- read.table(file = 'custom.metadata.tsv', 
+metadata <- read.table(file = 'F1B_custom.metadata.tsv', 
                        sep = '\t', header = TRUE, quote = "")
 metadata <- metadata %>% distinct(strain, .keep_all = TRUE)
 
@@ -70,7 +70,7 @@ sizetext = 4
 p1 <- ggtree(Ttree.drop, mrsd = '2020-03-01', as.Date = T, 
              aes(color = group), size = 0.3) %<+% 
   sample_dat + theme_tree2() +
-  scale_color_manual(name="Clades",
+  scale_color_manual(name="Variant",
                      labels=c("Lineage A", "Lineage B",
                               "Clade V"),
                      values = values) +
@@ -92,11 +92,9 @@ p1 <- ggtree(Ttree.drop, mrsd = '2020-03-01', as.Date = T,
         legend.background = element_blank()) +
   guides(shape = guide_legend(order = 2),
          fill = guide_legend(order = 1))
-p1
 
 
-
-pdf(file = 'Output/tree_early.pdf', width = 4.5, height = 3)
+pdf(file = 'Output/F1B_tree_early.pdf', width = 4.5, height = 3)
 print(p1)
 dev.off()
 
