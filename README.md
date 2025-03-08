@@ -41,7 +41,9 @@ where $\beta_j\propto V_j/\sum_{j=1}^J V_j$ is the transmission rate for variant
 
 ### The evoSIR-Seeding-Spreading (evoSSS) model
 The evoSIR-Seeding-Spreading (evoSSS) model integrated a Seeding-Spreading framework with the evoSIR model. The transition from one cycle to the next is represented by the composition of the seeding process and the evoSIR model:
+
 $$F=f_{\text{evoSIR}(Q,\beta)}\cdot f_\text{seed}$$
+
 This composition function is applied to the matrix of infectious individuals, transforming the state from cycle $n$ to $n+1$:
 
 $$F: I^n\rightarrow I^{n+1}$$
