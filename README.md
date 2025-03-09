@@ -75,7 +75,7 @@ $$f_{\text{evoSIR}(Q,\beta)}: D^{n+1}\rightarrow I^{n+1,h}$$
 where the spreading capacity $Q$ determines the susceptible individuals per seed, while transmission rates $\beta=[\beta_1,\beta_2,…,\beta_J]$ indicate the variant risk. The epidemic outcomes of these hotspots are then aggregated to represent the global pandemic state for the next epidemic cycle:
 
 $$
-I_j^{(n+1)}(t) = \sum_{h \in \text{Hotspots}} I_j^{(n+1,h)}(t), \quad j \in \{1,2,\dots,J\}.
+I_j^{n+1}(t) = \sum_{h \in \text{Hotspots}} I_j^{n+1,h}(t), \quad j \in \{1,2,\dots,J\}.
 $$
 
 Specifically, the simulation in this paper used 200 days and an interspace of 30 days for each seeding-spreading cycle. 
