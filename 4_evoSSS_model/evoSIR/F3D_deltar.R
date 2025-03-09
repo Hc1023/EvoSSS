@@ -3,7 +3,7 @@ library(rstan)
 library(ggplot2)
 library(ggpubr)
 
-load(file = 'evoSIR.rdata')
+load(file = 'evoSIR/F3C_evoSIR.rdata')
 fit = fitlist[[4]]
 posterior_samples <- rstan::extract(fit)
 
@@ -25,6 +25,6 @@ p = ggplot(dat, aes(x=y)) +
                      )) 
 p
 
-pdf(file = 'Output/deltar.pdf', width = 2.8, height = 1.8)
+pdf(file = 'Output/F3D_deltar.pdf', width = 2.8, height = 1.8)
 print(p)
 dev.off()

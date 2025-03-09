@@ -20,7 +20,7 @@ stanfit = function(CaseNum, ratio, chains_num){
   )
 
   # Fit the model
-  fit <- stan(file = 'evoSIR.stan', data = stan_data, 
+  fit <- stan(file = 'F3D_evoSIR.stan', data = stan_data, 
               iter = 3000, chains = chains_num, 
               warmup = 2000, verbose = TRUE)
   
@@ -29,22 +29,23 @@ stanfit = function(CaseNum, ratio, chains_num){
 
 # fit = stanfit(CaseNum,  0.3, chains_num = 1)
 
-realData_all <- read.csv("Covid19CasesWH.csv", row.names = 1)
+realData_all <- read.csv("evoSIR/F3C_Covid19CasesWH.csv", row.names = 1)
 CaseNum = realData_all$CaseNum
 
-## sensitivity analysis
-fitlist = list()
-for (i in c(1:9)) {
-  ratio_initial  = i/10
-  fitlist[[i]] = stanfit(CaseNum, ratio_initial, 
-                         chains_num = 4)
+if(F){
+  ## sensitivity analysis
+  fitlist = list()
+  for (i in c(1:9)) {
+    ratio_initial  = i/10
+    fitlist[[i]] = stanfit(CaseNum, ratio_initial, 
+                           chains_num = 4)
+  }
+  # print(fit)
+  save(fitlist, file = 'evoSIR.rdata')
 }
-
-# print(fit)
-save(fitlist, file = 'evoSIR.rdata')
-
+load('evoSIR/F3D_evoSIR.rdata')
 # Generate trace plots for beta and gamma
-pdf(file = 'Output/acrosshost_sensitivity.pdf', 
+pdf(file = 'Output/S7C_acrosshost_sensitivity.pdf', 
     width = 9, height = 2)
 
 for (i in 1:9) {

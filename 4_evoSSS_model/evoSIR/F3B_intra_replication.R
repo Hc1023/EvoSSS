@@ -14,7 +14,7 @@ read_excel_allsheets <- function(filename, tibble = FALSE) {
   x
 }
 
-mysheets <- read_excel_allsheets("../2_Experiment/cd.xlsx")
+mysheets <- read_excel_allsheets("../2_Experiment/F2C_cd.xlsx")
 df = mysheets[['replication']]
 idset = c('2','8','4','5','3','9')
 df = df[df$ID %in% idset,]
@@ -171,7 +171,7 @@ p2 = ggplot(data = out_df, aes(x = time)) +
         legend.key = element_blank()) +
   coord_cartesian(ylim = c(1,100000))
 
-pdf(paste0("Output/withinhost_par.pdf"), width = 2.5, height = 1.5)
+pdf(paste0("Output/F3B_withinhost_par.pdf"), width = 2.5, height = 1.5)
 print(p1)
 print(p2)
 dev.off()

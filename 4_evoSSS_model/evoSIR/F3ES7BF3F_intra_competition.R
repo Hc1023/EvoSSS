@@ -7,8 +7,9 @@ library(deSolve)
 library(rstan)
 library(zoo)
 
-df_all = read.csv("../2_Experiment/vcf_231228.csv")
-sampleid = read.csv("../2_Experiment/sampleid.csv")
+load('evoSIR/F3E_intra_competition.rdata')
+df_all = read.csv("../2_Experiment/S5A_vcf_231228.csv")
+sampleid = read.csv("../2_Experiment/S4B_sampleid.csv")
 sampleid[, 2][sampleid[, 2] == ""] <- NA
 sampleid[,2] = na.locf(sampleid[,2])
 
@@ -56,11 +57,9 @@ viral_model <- function(t, state, parameters) {
   return(list(c(dV1dt, dV2dt)))
 }
 
-
 withinhost_fun = function(param_sets, state = c(V1 = 1, V2 = 0)){
   # Initial state and time sequence
   times <- seq(0, 100, by = 1)
-  
   # Run simulations for each parameter set
   results <- lapply(seq(nrow(param_sets)), function(i) {
     params <- unlist(param_sets[i, ])
@@ -108,13 +107,15 @@ stan_data <- list(
   ratios_sd = median_df$sd[2:4]
 )
 
-fit <- stan(file = 'intra_competition.stan', data = stan_data, 
-            iter = 3000, chains = 1, 
-            warmup = 2000, verbose = TRUE)
-fit1 = fit
-# pairs(fit)
+if(F){
+  fit <- stan(file = 'F3E_intra_competition.stan', data = stan_data, 
+              iter = 3000, chains = 1, 
+              warmup = 2000, verbose = TRUE)
+  fit1 = fit
+  # pairs(fit)
+}
 
-
+fit = fit1
 posterior = rstan::extract(fit)
 param_sets1 <- expand.grid(r1 = stan_data$r1, 
                            r2 = stan_data$r2, 
@@ -173,8 +174,6 @@ p1 = ggplot() +
 
 p1
 
-fit1 = fit
-
 ################ Vero ###########
 
 # Vero
@@ -208,12 +207,14 @@ stan_data <- list(
   ratios_sd = median_df$sd[2:4]
 )
 
-fit <- stan(file = 'intra_competition.stan', data = stan_data, 
-            iter = 3000, chains = 1, 
-            warmup = 2000, verbose = TRUE)
+if(F){
+  fit <- stan(file = 'F3E_intra_competition.stan', data = stan_data, 
+              iter = 3000, chains = 1, 
+              warmup = 2000, verbose = TRUE)
+  pairs(fit)
+}
 
-pairs(fit)
-
+fit = fit2
 posterior = rstan::extract(fit)
 param_sets1 <- expand.grid(r1 = stan_data$r1, 
                            r2 = stan_data$r2, 
@@ -269,12 +270,14 @@ p2 = ggplot() +
                      breaks = c(0,0.5,1),
                      labels = c('0.0','0.5','1.0')) +
   coord_cartesian(xlim = c(0,72))
-fit2 = fit
-
-save(fit1, fit2, file = 'evoSIR/intra_competition.rdata')
+# fit2 = fit
+p2
+if(F){
+  save(fit1, fit2, file = 'evoSIR/intra_competition.rdata')
+}
 ############## plot ##########
 
-pdf(file = 'Output/intra_competition.pdf', width = 2, height = 1.4)
+pdf(file = 'Output/F3E_intra_competition.pdf', width = 2, height = 1.4)
 print(p1)
 print(p2)
 dev.off()
@@ -322,7 +325,8 @@ p4 = ggplot(data) +
    xlab("K") + ylab('Density') +
   theme(panel.grid.minor = element_blank())
 
-
+p3
+p4
 # > log10(mean(data$K1))
 # [1] 2.838322
 # > log10(mean(data$K2))
@@ -333,7 +337,7 @@ p4 = ggplot(data) +
 # > mean(data$K2)
 # [1] 117.4001
 
-pdf(file = 'Output/intra_competition_par.pdf', width = 2, height = 1.5)
+pdf(file = 'Output/S7B_intra_competition_par.pdf', width = 2, height = 1.5)
 print(p3)
 print(p4)
 dev.off()
@@ -431,8 +435,6 @@ p5 = ggplot() +
 
 p5
 
-
-
 param_sets1 <- expand.grid(r1 = stan_data$r1, 
                            r2 = stan_data$r2, 
                            K = posterior$K, 
@@ -497,7 +499,7 @@ p6 = ggplot() +
                      labels = c('0.0','0.5','1.0'))
 p6
 
-pdf(file = 'Output/intra_competition_cycle.pdf', width = 2, height = 1.4)
+pdf(file = 'Output/F3F_intra_competition_cycle.pdf', width = 2, height = 1.4)
 print(p5)
 print(p6)
 dev.off()

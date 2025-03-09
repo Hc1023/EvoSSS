@@ -2,10 +2,10 @@ rm(list = ls())
 library(rstan)
 library(ggplot2)
 library(scales)
-realData_all <- read.csv("Covid19CasesWH.csv", row.names = 1)
+realData_all <- read.csv("evoSIR/F3C_Covid19CasesWH.csv", row.names = 1)
 realData <- realData_all[-c(1:24), ] 
 observed_cases = realData$CaseNum
-load(file = 'evoSIR/evoSIR.rdata')
+load(file = 'evoSIR/F3C_evoSIR.rdata')
 update_fun = function(pars, states_old){
   
   S <- states_old[1]
@@ -183,7 +183,7 @@ for (j in 1:9) {
   plist[[j]] = p
 }
 
-pdf(paste0("Output/acrosshost.pdf"), width = 3, height = 2)
+pdf(paste0("Output/F3D_acrosshost.pdf"), width = 3, height = 2)
 for (j in 1:9) {
   print(plist[[j]] + ggtitle(j))
 }
@@ -249,5 +249,5 @@ for (j in 1:9) {
 
 colnames(dfposterior) = c('Ratio','beta1','beta2','gamma',
                           'beta1/beta2','r2-r1', 'd2-d1')
-write.csv(dfposterior, file = 'Output/acrosshost_parameters.csv',
+write.csv(dfposterior, file = 'Output/F3C_acrosshost_parameters.csv',
           row.names = F)
