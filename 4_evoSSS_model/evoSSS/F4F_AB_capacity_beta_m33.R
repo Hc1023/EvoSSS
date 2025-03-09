@@ -6,42 +6,45 @@ library(ggnewscale)
 library(tidyverse)
 library(dplyr)
 
-df = read.csv('../3_Epidemiological_analysis/Covid19CasesGISAID.csv')
-
-VOC = c("B", "A")
-names(VOC) = c("Lineage B","Lineage A")
-df = df[df$Mutations %in% names(VOC),]
-df$V = NA
-for (i in 1:length(VOC)) {
-  df$V[df$Mutations == names(VOC)[i]] = VOC[i]
+{
+  df = read.csv('../3_Epidemiological_analysis/F1D_Covid19CasesGISAID.csv')
+  
+  VOC = c("B", "A")
+  names(VOC) = c("Lineage B","Lineage A")
+  df = df[df$Mutations %in% names(VOC),]
+  df$V = NA
+  for (i in 1:length(VOC)) {
+    df$V[df$Mutations == names(VOC)[i]] = VOC[i]
+  }
+  df$V = factor(df$V, levels = VOC[1:2])
+  df = df %>% group_by(Var1, V) %>%
+    summarise(y = sum(Freq)) %>% as.data.frame()
+  colnames(df)[1] = 'date'
+  df <- na.omit(df)
+  max(df$date)
+  as.Date('2019-12-31') + 700
+  full_dates <- as.Date('2019-12-31') + 1:800
+  # Create a dataframe with all dates
+  full_df <- expand.grid(date = full_dates, 
+                         V = unique(df$V))
+  df$date = as.Date(df$date)
+  merged_df <- full_df %>%
+    left_join(df, by = c("date", "V")) %>%
+    mutate(count = ifelse(is.na(y), 0, y))
+  voc = unique(merged_df$V)
+  
+  observed_matrix = data.frame(v1 = merged_df[merged_df$V == 'A', 'count'],
+                               v2 = merged_df[merged_df$V == 'B', 'count'])
+  rownames(observed_matrix) = full_dates
+  fexpect0 = data.frame(y = c(observed_matrix$v1,observed_matrix$v2,
+                              observed_matrix$v3),
+                        x = rep(1:nrow(observed_matrix),2),
+                        group = rep(c('A','B'), 
+                                    each = nrow(observed_matrix)))
+  fexpect0$date = as.Date('2019-12-31') + fexpect0$x
+  fexpect0$group = factor(fexpect0$group, levels = c('A','B'))
 }
-df$V = factor(df$V, levels = VOC[1:2])
-df = df %>% group_by(Var1, V) %>%
-  summarise(y = sum(Freq)) %>% as.data.frame()
-colnames(df)[1] = 'date'
-df <- na.omit(df)
-max(df$date)
-as.Date('2019-12-31') + 700
-full_dates <- as.Date('2019-12-31') + 1:800
-# Create a dataframe with all dates
-full_df <- expand.grid(date = full_dates, 
-                       V = unique(df$V))
-df$date = as.Date(df$date)
-merged_df <- full_df %>%
-  left_join(df, by = c("date", "V")) %>%
-  mutate(count = ifelse(is.na(y), 0, y))
-voc = unique(merged_df$V)
 
-observed_matrix = data.frame(v1 = merged_df[merged_df$V == 'A', 'count'],
-                             v2 = merged_df[merged_df$V == 'B', 'count'])
-rownames(observed_matrix) = full_dates
-fexpect0 = data.frame(y = c(observed_matrix$v1,observed_matrix$v2,
-                            observed_matrix$v3),
-                      x = rep(1:nrow(observed_matrix),2),
-                      group = rep(c('A','B'), 
-                                  each = nrow(observed_matrix)))
-fexpect0$date = as.Date('2019-12-31') + fexpect0$x
-fexpect0$group = factor(fexpect0$group, levels = c('A','B'))
 update_fun <- function(pars, states_old, N, n) {
   S <- states_old[,1]
   I <- states_old[,2:(n+1)]
@@ -103,16 +106,14 @@ simu <- function(seed_mats, N, poolday, pars, n) {
   return(Onsets_mat)
 }
 
-fitlist = list()
-
-determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
+determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1, sampling = T){
   
   n = 2
   poolday = 30
   nday = 100
   pars_last = c(200,0.4,0.4)
   Onsets_mat_list = list()
-  # cond = T; ifsimu = F
+  # cond = T; ifsimu = F; sampling = F
   # cond = F; ifsimu = T
   
   for (j in 1:24) {
@@ -138,7 +139,7 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
       if(j==1){
         m = 1
       }else{
-        m = 0.0023
+        m = 1/30
       }
       Mobility_matrix <- diag(rep(m, 30))
       
@@ -149,8 +150,8 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
       probs <- lapply(Onsets, function(Onset) Onset / rowSums(do.call(cbind, Onsets)))
       seed_matrix <- matrix(0, nrow=n, ncol=length(seed_vec))
       
-
-      if(ifsimu){
+      
+      if(ifsimu & sampling){
         seed_matrix = sapply(1:length(seed_vec), function(x){
           rmultinom(1, ceiling(seed_vec[x]), c(probs[[1]][x],1-probs[[1]][x]))
         })
@@ -159,7 +160,7 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
           seed_matrix[i,] <- seed_vec * probs[[i]]
         }
       }
-
+      
       # Create seed_matrices for each variant
       seed_mats <- list()
       
@@ -168,7 +169,7 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
       }
       
       
-      expected_matrix = observed_matrix[poolday*j+1:nday,] - Onsets_mat[poolday+1:nday,] 
+      expected_matrix = observed_matrix[poolday*(j-1)+1:nday,] - Onsets_mat[poolday+1:nday,] 
       expected_matrix[expected_matrix<0] = 0
       expected_matrix = round(expected_matrix)
       expected_matrix[(2*poolday + 1):nday,] = 0
@@ -191,12 +192,11 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
           pars_last = pars_last
         )
         # Fit the model
-        fit <- stan(file = 'evoSSS/capacity_beta.stan', data = stan_data, 
+        fit <- stan(file = 'evoSSS/F4E_capacity_beta.stan', data = stan_data, 
                     iter = 3000, chains = 1, warmup = 2000,
                     verbose = TRUE)
         fitlist[[j]] = fit
       }
-      
       
       fit = fitlist[[j]]
       posterior = rstan::extract(fit)
@@ -224,7 +224,7 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
         
         
       }
-
+      
       if(ifsimu){
         pars_last = c(posterior$contact[n_simu], 
                       posterior$beta1[n_simu],
@@ -298,8 +298,10 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
 }
 
 if(F){
+  fitlist = list()
   fitlist = determinant_fun(cond = T, ifsimu  = F, n_simu = n_simu)
-  save(fitlist, file = 'evoSSS/AB_beta.rdata')
+  save(fitlist, file = 'evoSSS/F4E_AB_beta_m33.rdata')
+  load('evoSSS/F4E_AB_beta_m33.rdata')
 }
 
 
@@ -308,7 +310,7 @@ if(F){
   df2_list = list()
   for (n_simu in 1:1000) {
     print(n_simu)
-    data = determinant_fun(cond = F, ifsimu  = T, n_simu = n_simu)
+    data = determinant_fun(cond = F, ifsimu  = T, n_simu = n_simu, sampling = T)
     df2_list[[n_simu]] = data$y
   }
   simu_Onset = data.frame(bind_cols(df2_list))
@@ -328,22 +330,91 @@ if(F){
   plot_data$group = factor(plot_data$group, levels = c('A','B'))
   
   if(F){
-    save(fitlist, simu_Onset, plot_data, file = 'evoSSS/AB_beta.rdata')
-    load('evoSSS/AB_beta.rdata')
+    save(fitlist, simu_Onset, plot_data, file = 'evoSSS/F4E_AB_beta_m33.rdata')
+    load('evoSSS/F4E_AB_beta_m33.rdata')
+  }
+  
+}
+
+values = c(hue_pal()(3)[1], hue_pal()(3)[3])
+plot_data = plot_data[plot_data$x>1,]
+p = ggplot() +
+  geom_point(data = fexpect0, 
+             aes(x = date, y = y, 
+                 group = group, color = group),
+             size = 0.4, shape = 16) +
+  geom_ribbon(data = plot_data, 
+              aes(x = date, group = group, 
+                  ymin = LowerCI, ymax = UpperCI, fill = group)) +  # Confidence interval
+  geom_line(data = plot_data, 
+            aes(x = date, y = Fitted, 
+                group = group, color = group), linewidth = 1) +
+  scale_color_manual(name="",
+                     values = alpha(values, 0.7)) +
+  scale_fill_manual(name="",
+                    values = alpha(values, 0.3)) +
+  scale_y_continuous(trans='log10') +
+  coord_cartesian(ylim = c(2,max(plot_data$Fitted))) +
+  labs(x = "Date", y = "Proportion") +
+  theme_bw() +
+  scale_y_continuous(trans='log10', 
+                     breaks = c(1,10,100,1000,10000),
+                     labels = c(expression(10^0),expression(10^1),
+                                expression(10^2), expression(10^3),
+                                expression(10^4))) +
+  xlab('') + ylab('Cases') + 
+  scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="6 months"),
+               minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-05-01'), by ='1 month'),
+               date_labels = "%y-%b", expand = c(0, 0)) +
+  coord_cartesian(xlim = c(as.Date('2020-01-01'), as.Date('2021-10-31')),
+                  ylim = c(1,4*10^4)) +
+  theme(legend.position = 'none',
+        panel.grid.minor = element_blank())
+
+pdf(paste0("Output/F4E_AB_beta_m33.pdf"), width = 2.5, height = 1.6)
+print(p)
+dev.off()
+######### plot dynamic non-sampling ##############
+if(F){
+  df2_list = list()
+  for (n_simu in 1:1000) {
+    print(n_simu)
+    data = determinant_fun(cond = F, ifsimu  = T, 
+                           n_simu = n_simu, sampling = F)
+    df2_list[[n_simu]] = data$y
+  }
+  simu_Onset = data.frame(bind_cols(df2_list))
+  ci_lower <- apply(simu_Onset, 1, quantile, probs = 0.025, na.rm = T)
+  ci_upper <- apply(simu_Onset, 1, quantile, probs = 0.975, na.rm = T)
+  plot_data_non_sampling <- data.frame(
+    date = data$x + as.Date('2019-12-31'),
+    V = data$color,
+    # Observed = observed_cases,
+    Fitted = rowMeans(simu_Onset),
+    LowerCI = ci_lower,
+    UpperCI = ci_upper
+  )
+  plot_data_non_sampling$group = 'A'
+  plot_data_non_sampling$group[plot_data_non_sampling$V == '2'] = 'B'
+  plot_data_non_sampling$group = factor(plot_data_non_sampling$group, levels = c('A','B'))
+  
+  if(F){
+    save(fitlist, simu_Onset, plot_data, plot_data_non_sampling, file = 'evoSSS/AB_beta_m33.rdata')
+    load('evoSSS/AB_beta_m33.rdata')
   }
   
   values = c(hue_pal()(3)[1], hue_pal()(3)[3])
-  plot_data = plot_data[plot_data$x>1,]
+  # plot_data_sampling = plot_data_sampling[plot_data_sampling$x>1,]
   
   p = ggplot() +
     geom_point(data = fexpect0, 
                aes(x = date, y = y, 
                    group = group, color = group),
                size = 0.4, shape = 16) +
-    geom_ribbon(data = plot_data, 
+    geom_ribbon(data = plot_data_non_sampling, 
                 aes(x = date, group = group, 
                     ymin = LowerCI, ymax = UpperCI, fill = group)) +  # Confidence interval
-    geom_line(data = plot_data, 
+    geom_line(data = plot_data_non_sampling, 
               aes(x = date, y = Fitted, 
                   group = group, color = group), linewidth = 1) +
     scale_color_manual(name="",
@@ -351,7 +422,7 @@ if(F){
     scale_fill_manual(name="",
                       values = alpha(values, 0.3)) +
     scale_y_continuous(trans='log10') +
-    coord_cartesian(ylim = c(2,max(plot_data$Fitted))) +
+    coord_cartesian(ylim = c(2,max(plot_data_non_sampling$Fitted))) +
     labs(x = "Date", y = "Proportion") +
     theme_bw() +
     scale_y_continuous(trans='log10', 
@@ -365,12 +436,14 @@ if(F){
                  date_labels = "%y-%b", expand = c(0, 0)) +
     coord_cartesian(xlim = c(as.Date('2020-01-01'), as.Date('2021-10-31')),
                     ylim = c(1,4*10^4)) +
-    theme(legend.position = 'none')
+    theme(legend.position = 'none',
+          panel.grid.minor = element_blank())
   
-  pdf(paste0("Output/AB_capacity_beta.pdf"), width = 2.5, height = 1.6)
+  pdf(paste0("Output/AB_beta_m33_nonsampling.pdf"), width = 2.5, height = 1.6)
   print(p)
   dev.off()
 }
+
 
 ######### parameter dynamic ##############
 parsmat = data.frame()
@@ -379,11 +452,9 @@ for (i in 2:23) {
   parsmat = rbind(parsmat, 
                   data.frame(Tcycle = i,
                              y = c(posterior$contact, 
-                                   posterior$beta1,
-                                   posterior$beta2),
-                             group = c(rep('contact', length(posterior$contact)),
-                                       rep('beta1', length(posterior$beta1)),
-                                       rep('beta2', length(posterior$beta2)))
+                                   posterior$beta1, posterior$beta2),
+                             group = rep(c('contact','beta1','beta2'), 
+                                         each = length(posterior$contact))
                              
                   ))
   
@@ -398,7 +469,26 @@ medians <- parsmat %>%
   group_by(date, group) %>%
   summarize(median_y = median(y)) %>%
   as.data.frame()
-p3 = ggplot() +
+p1 = ggplot() +
+  geom_boxplot(data = parsmat[parsmat$group == 'contact',], 
+               aes(x = date, y = y, group = date),
+               color = alpha('red',0.7), 
+               fill = alpha('red',0.3),
+               width = 6, outlier.shape = NA) +
+  geom_line(data = medians[medians$group == 'contact',], 
+            aes(x = date, y = median_y), 
+            color = 'red', 
+            linewidth = 0.4) +
+  scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2024-11-01'), by="6 months"),
+               minor_breaks = seq(as.Date('2019-12-01'), as.Date('2024-11-01'), by ='1 month'),
+               date_labels = "%y-%b",
+               expand = c(0, 0)) +
+  coord_cartesian(xlim = c(as.Date('2020-01-01'), as.Date('2021-10-31'))) +
+  scale_y_continuous(trans='log2', n.breaks = 4) +
+  theme_bw() + xlab('') + ylab('Q') +
+  theme(panel.grid.minor = element_blank())
+
+p2 = ggplot() +
   geom_boxplot(data = parsmat[parsmat$group == 'beta1',], 
                aes(x = date-pd, y = y, group = date),
                color = alpha(values[1],0.7), 
@@ -427,75 +517,7 @@ p3 = ggplot() +
   scale_y_continuous(n.breaks = 4) +
   theme_bw() + xlab('') + ylab(expression(beta)) +
   theme(panel.grid.minor = element_blank())
-pdf(paste0("Output/AB_capacity_beta_par.pdf"), width = 2.6, height = 1)
-print(p3)
+pdf(paste0("Output/F4E_AB_beta_m33_par.pdf"), width = 2.6, height = 1)
+print(p1)
+print(p2)
 dev.off()
-
-
-
-if(F){
-  data = determinant_fun(cond = F, ifsimu  = F, n_simu = n_simu)
-  data$date = as.Date('2019-12-31') + data$x
-  data$group = 'A'
-  data$group[data$color == '2'] = 'B'
-  data$group = factor(data$group, levels = c('A','B'))
-  ggplot() +
-    geom_point(data = fexpect0, 
-               aes(x = date, y = y, 
-                   group = group, color = group)) +
-    geom_line(data = data, 
-              aes(x = date, y = y, group = group, color= group)) +
-    scale_y_continuous(trans='log10') +
-    coord_cartesian(ylim = c(2,max(data$y))) +
-    labs(x = "Date", y = "Proportion") +
-    theme_minimal() +
-    theme(legend.position = "right",
-          plot.title = element_text(hjust = 0.5)) +
-    scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="6 months"),
-                 minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-11-01'), by ='1 month'),
-                 date_labels = "%y-%b") +
-    xlab('') + ylab('Cases') + 
-    coord_cartesian(xlim = c(as.Date('2020-01-01'), as.Date('2021-10-31')),
-                    ylim = c(1,2*10^4))
-  
-  data$group = factor(data$group, levels = c('Delta','Alpha','D614G'))
-  
-  
-  ggplot() +
-    geom_area(data = data, 
-              aes(x = date, y = p, fill = group),
-              position = 'fill') +
-    coord_cartesian(xlim = c(as.Date('2020-06-30'), as.Date('2021-10-31')),
-                    ylim = c(0,1)) +
-    scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2024-11-01'), by="6 months"),
-                 minor_breaks = seq(as.Date('2019-12-01'), as.Date('2024-11-01'), by ='1 month'),
-                 date_labels = "%y-%b",
-                 expand = c(0, 0)) +
-    scale_y_continuous(breaks = seq(0,1,0.5), expand = c(0, 0))
-  
-  parsmat = data.frame()
-  for (i in 1:length(fitlist)) {
-    posterior = rstan::extract(fitlist[[i]])
-    parsmat = rbind(parsmat, 
-                    data.frame(Tcycle = i,
-                               y = c(posterior$contact, 
-                                     posterior$beta1,
-                                     posterior$beta2,
-                                     posterior$beta3),
-                               group = c(rep('contact', length(posterior$contact)),
-                                         rep('beta1', length(posterior$beta1)),
-                                         rep('beta2', length(posterior$beta2)),
-                                         rep('beta3', length(posterior$beta3)))
-                               
-                    ))
-    
-  }
-  parsmat$group = factor(parsmat$group)
-  parsmat$Tcycle = factor(parsmat$Tcycle)
-  ggplot(parsmat[parsmat$group != 'contact', ], 
-         aes(x = Tcycle, y = y, color = group, fill = group)) +
-    geom_boxplot(outlier.shape = NA) 
-  
-}
-
-

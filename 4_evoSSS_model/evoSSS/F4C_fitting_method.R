@@ -7,7 +7,7 @@ library(tidyverse)
 library(dplyr)
 library(RColorBrewer)
 
-df = read.csv('../3_Epidemiological_analysis/Covid19CasesGISAID.csv')
+df = read.csv('../3_Epidemiological_analysis/F1D_Covid19CasesGISAID.csv')
 
 full_dates <- as.Date('2019-12-31') + 1:100
 df1 = data.frame(x = c(1:100,1:100),
@@ -66,7 +66,7 @@ p = ggplot() +
         plot.background = element_blank(),
         panel.background = element_blank(),
         strip.background = element_blank())
-pdf(paste0("Output/fitting1.pdf"), width = 1.6, height = 1.3)
+pdf(paste0("Output/F4C_fitting1.pdf"), width = 1.6, height = 1.3)
 print(p)
 dev.off()
 
@@ -96,7 +96,7 @@ p = ggplot() +
         plot.background = element_blank(),
         panel.background = element_blank(),
         strip.background = element_blank())
-pdf(paste0("Output/fitting2.pdf"), width = 1.4, height = 0.85)
+pdf(paste0("Output/F4C_fitting2.pdf"), width = 1.4, height = 0.85)
 print(p)
 dev.off()
 
@@ -116,7 +116,7 @@ p = ggplot() +
         panel.background = element_blank(),
         strip.background = element_blank(),
         axis.ticks.y=element_blank())
-pdf(paste0("Output/fitting3.pdf"), width = 1.4, height = 0.85)
+pdf(paste0("Output/F4C_fitting3.pdf"), width = 1.4, height = 0.85)
 print(p)
 dev.off()
 
@@ -176,7 +176,7 @@ p = ggplot() +
         plot.background = element_blank(),
         panel.background = element_blank(),
         strip.background = element_blank())
-pdf(paste0("Output/fitting4.pdf"), width = 1.6, height = 1.3)
+pdf(paste0("Output/F4C_fitting4.pdf"), width = 1.6, height = 1.3)
 print(p)
 dev.off()
 
@@ -240,6 +240,6 @@ p = ggplot() +
         panel.background = element_blank(),
         strip.background = element_blank())
 
-pdf(paste0("Output/fitting5.pdf"), width = 1.6, height = 1.3)
+pdf(paste0("Output/F4C_fitting5.pdf"), width = 1.6, height = 1.3)
 print(p)
 dev.off()

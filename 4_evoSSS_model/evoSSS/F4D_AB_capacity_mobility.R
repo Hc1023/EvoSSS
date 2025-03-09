@@ -7,7 +7,7 @@ library(tidyverse)
 library(dplyr)
 library(RColorBrewer)
 
-df = read.csv('../3_Epidemiological_analysis/Covid19CasesGISAID.csv')
+df = read.csv('../3_Epidemiological_analysis/F1D_Covid19CasesGISAID.csv')
 
 VOC = c("B", "A")
 names(VOC) = c("Lineage B","Lineage A")
@@ -130,9 +130,6 @@ ggplot() +
   geom_line(data = fonset,
             aes(x = x, y = y, group = group, color = group))
 
-
-fitlist = list()
-
 determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
   
   n = 2
@@ -178,7 +175,7 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
         )
         
         # Fit the model
-        fit <- stan(file = 'evoSSS/mobility.stan', data = stan_data, 
+        fit <- stan(file = 'evoSSS/F4D_capacity_mobility.stan', data = stan_data, 
                     iter = 3000, chains = 1, warmup = 2000,
                     verbose = TRUE)
         fitlist[[j]] = fit
@@ -275,8 +272,9 @@ determinant_fun = function(cond = T, ifsimu  = T, n_simu = 1){
   return(data)
 }
 if(F){
-  save(fitlist, file = 'evoSSS/AB_mobility.rdata')
-  load('evoSSS/AB_mobility.rdata')
+  fitlist = list()
+  save(fitlist, file = 'evoSSS/F4D_AB_mobility.rdata')
+  load('evoSSS/F4D_AB_mobility.rdata')
 }
 
 
@@ -305,49 +303,51 @@ if(F){
   plot_data$group = factor(plot_data$group, levels = c('A','B'))
   
   if(F){
-    save(fitlist, simu_Onset, plot_data, file = 'evoSSS/AB_mobility.rdata')
-    load('evoSSS/AB_mobility.rdata')
+    save(fitlist, simu_Onset, plot_data, file = 'F4D_evoSSS/AB_mobility.rdata')
+    load('evoSSS/F4D_AB_mobility.rdata')
   }
-  
-  values = c(hue_pal()(3)[1], hue_pal()(3)[3])
-  plot_data = plot_data[plot_data$x>1,]
-
-  p = ggplot() +
-    geom_point(data = fexpect0, 
-               aes(x = date, y = y, 
-                   group = group, color = group),
-               size = 0.4, shape = 16) +
-    geom_ribbon(data = plot_data, 
-                aes(x = date, group = group, 
-                    ymin = LowerCI/28, ymax = UpperCI/28, fill = group)) +  # Confidence interval
-    geom_line(data = plot_data, 
-              aes(x = date, y = Fitted/28, 
-                  group = group, color = group), linewidth = 1) +
-    scale_color_manual(name="",
-                       values = alpha(values, 0.7)) +
-    scale_fill_manual(name="",
-                      values = alpha(values, 0.3)) +
-    scale_y_continuous(trans='log10') +
-    coord_cartesian(ylim = c(2,max(plot_data$Fitted))) +
-    labs(x = "Date", y = "Proportion") +
-    theme_bw() +
-    scale_y_continuous(trans='log10', 
-                       breaks = c(1,10,100,1000,10000),
-                       labels = c(expression(10^0),expression(10^1),
-                                  expression(10^2), expression(10^3),
-                                  expression(10^4))) +
-    xlab('') + ylab('Cases') + 
-    scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="6 months"),
-                 minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-05-01'), by ='1 month'),
-                 date_labels = "%y-%b", expand = c(0, 0)) +
-    coord_cartesian(xlim = c(as.Date('2020-01-01'), as.Date('2021-10-31')),
-                    ylim = c(1,4*10^4)) +
-    theme(legend.position = 'none')
-  
-  pdf(paste0("Output/AB_mobility.pdf"), width = 2.5, height = 1.6)
-  print(p)
-  dev.off()
 }
+
+values = c(hue_pal()(3)[1], hue_pal()(3)[3])
+plot_data = plot_data[plot_data$x>1,]
+
+p = ggplot() +
+  geom_point(data = fexpect0, 
+             aes(x = date, y = y, 
+                 group = group, color = group),
+             size = 0.4, shape = 16) +
+  geom_ribbon(data = plot_data, 
+              aes(x = date, group = group, 
+                  ymin = LowerCI/28, ymax = UpperCI/28, fill = group)) +  # Confidence interval
+  geom_line(data = plot_data, 
+            aes(x = date, y = Fitted/28, 
+                group = group, color = group), linewidth = 1) +
+  scale_color_manual(name="",
+                     values = alpha(values, 0.7)) +
+  scale_fill_manual(name="",
+                    values = alpha(values, 0.3)) +
+  scale_y_continuous(trans='log10') +
+  coord_cartesian(ylim = c(2,max(plot_data$Fitted))) +
+  labs(x = "Date", y = "Proportion") +
+  theme_bw() +
+  scale_y_continuous(trans='log10', 
+                     breaks = c(1,10,100,1000,10000),
+                     labels = c(expression(10^0),expression(10^1),
+                                expression(10^2), expression(10^3),
+                                expression(10^4))) +
+  xlab('') + ylab('Cases') + 
+  scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="6 months"),
+               minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-05-01'), by ='1 month'),
+               date_labels = "%y-%b", expand = c(0, 0)) +
+  coord_cartesian(xlim = c(as.Date('2020-01-01'), as.Date('2021-10-31')),
+                  ylim = c(1,4*10^4)) +
+  theme(legend.position = 'none',
+        panel.grid.minor = element_blank())
+
+pdf(paste0("Output/F4D_AB_mobility.pdf"), width = 2.5, height = 1.6)
+print(p)
+dev.off()
+
 
 ######### parameter dynamic ##############
 parsmat = data.frame()
@@ -386,7 +386,7 @@ p1 = ggplot() +
                minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-05-01'), by ='1 month'),
                date_labels = "%y-%b", expand = c(0, 0)) +
   coord_cartesian(xlim = c(as.Date('2020-01-01'), as.Date('2021-10-31'))) +
-  theme_bw() + xlab('') + ylab('M') + 
+  theme_bw() + xlab('') + ylab('m') + 
   theme(panel.grid.minor = element_blank())
 
 # > median(parsmat[parsmat$group == 'mobility','y'])
@@ -412,7 +412,7 @@ p2 = ggplot() +
                      labels = c(500, 1000, 2000, 4000)) +
   theme(panel.grid.minor = element_blank())
 
-pdf(paste0("Output/AB_mobility_par.pdf"), width = 2.6, height = 1)
+pdf(paste0("Output/F4D_AB_mobility_par.pdf"), width = 2.6, height = 1)
 print(p1)
 print(p2)
 dev.off()
