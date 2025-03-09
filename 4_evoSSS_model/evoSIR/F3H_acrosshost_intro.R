@@ -5,10 +5,10 @@ library(scales)
 library(gridExtra)
 library(reshape2)
 
-realData_all <- read.csv("../4_evoSSS_model/Covid19CasesWH.csv", row.names = 1)
+realData_all <- read.csv("evoSIR/F3C_Covid19CasesWH.csv", row.names = 1)
 CaseNum = realData_all$CaseNum
 I0 = sum(CaseNum[22:24])
-load(file = '../4_evoSSS_model/evoSIR/evoSIR.rdata')
+load(file = 'evoSIR/F3C_evoSIR.rdata')
 
 df = data.frame()
 for (i in 1:9) {
@@ -52,7 +52,7 @@ p = ggplot(df, aes(x = group, y = delta, fill = delta)) +
                        labels = c('-10','0','+10'),
                        name = expression(d[B]-d[A]))
 p
-pdf(paste0("Output/R0_delta.pdf"), width = 4.5, height = 1)
+pdf(paste0("Output/F3H_R0_delta.pdf"), width = 4.5, height = 1)
 print(p)
 dev.off()
 
@@ -80,12 +80,7 @@ p <- ggplot(data_melted,
 
 p
 
-pdf(paste0("Output/acrosshost_intro_beta.pdf"), width = 4.4, height = 1.3)
+pdf(paste0("Output/F3H_acrosshost_intro_beta.pdf"), width = 4.4, height = 1.3)
 print(p)
 dev.off()
-
-pdf(paste0("Output/R0.pdf"), width = 4.5, height = 1.45)
-print(p)
-dev.off()
-
 
