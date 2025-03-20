@@ -8,7 +8,7 @@ library(dplyr)
 library(data.table)
 library(lubridate)
 library(ISOweek)
-df1 = fread('VIW_FNT.csv')
+df1 = fread('F6A_VIW_FNT.csv')
 df1[is.na(df1)] = 0
 
 ob1 = df1[,c('ISO_WEEKSTARTDATE','INF_A','INF_B','INF_ALL')]

@@ -303,11 +303,11 @@ if(F){
   # rm(fitlist_w1, fitlist_w2, fitlist_w3, fitlist_w4)
   save(fitlistw, file = 'flu_2018_pred.rdata')
 }
-load('flu_2018_pred.rdata')
+load('S8B_flu_2018_pred.rdata')
 
 if(F){
   dates = c(as.Date('2017-08-01'), as.Date('2021-08-01'))
-  w=1; w=2; w=3; w=4
+  w=1; #w=2; w=3; w=4
   
   {
     voc = c('A','B')
@@ -373,7 +373,7 @@ if(F){
     geom_point(color = alpha(values[1], 0.6)) +
     geom_abline(slope = slope1A, intercept = intercept1A, color = values[1]) +
     annotate("text", x = 3, y = 2.3,
-             label = paste0("y = ", round(slope1A, 2), "x + ", round(intercept1A, 2),
+             label = paste0("y = x - 0.1",
                             "\nR² = ", round(adj_r2_1A, 3)),
              color = values[1], hjust = 0) +
     xlab(expression(log[10](Expected))) + ylab(expression(log[10](Predicted))) +
@@ -383,7 +383,7 @@ if(F){
     theme(panel.grid.minor = element_blank(),
           legend.position = 'none')
   p1
-  # y = 1.08x-0.22  r2 = 0.825
+  # r2 = 0.802
   coordB = log10(c(min(data[data$group == 'B',c('x','y')]),
                    max(data[data$group == 'B',c('x','y')])))
   p2 = ggplot(data = data[data$group == 'B',], 
@@ -391,7 +391,7 @@ if(F){
     geom_point(color = alpha(values[2], 0.6)) +
     geom_abline(slope = slope1B, intercept = intercept1B, color = values[2]) +
     annotate("text", x = 3, y = 2.1,
-             label = paste0("y = ", round(slope1B, 2), "x + ", round(intercept1B, 2),
+             label = paste0("y = x - 0.1",
                             "\nR² = ", round(adj_r2_1B, 3)),
              color = values[2], hjust = 0) +
     xlab(expression(log[10](Expected))) + ylab(expression(log[10](Predicted))) +
@@ -401,7 +401,7 @@ if(F){
     theme(panel.grid.minor = element_blank(),
           legend.position = 'none')
   p2
-  # y=1.1x-0.25  r2=0.853
+  # r2=0.816
   pdf(paste0("Output/pred_multiple_month.pdf"), width = 2.2, height = 2)
   print(p1)
   print(p2)
