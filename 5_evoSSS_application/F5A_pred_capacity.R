@@ -6,7 +6,7 @@ library(ggnewscale)
 library(tidyverse)
 library(dplyr)
 load('F5B_AB.rdata')
-df = read.csv('../3_Epidemiological_analysis/F1D_Covid19CasesGISAID.csv')
+df = read.csv('../3_Epidemiological_analysis/F3B_Covid19CasesGISAID.csv')
 
 VOC = c("B", "A")
 names(VOC) = c("Lineage B","Lineage A")

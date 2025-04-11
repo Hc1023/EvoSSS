@@ -7,8 +7,8 @@ library(ggthemes)
 library(scales)
 library(ggsci)
 
-df_all = read.csv("S5A_vcf_231228.csv")
-sampleid = read.csv("S4B_sampleid.csv")
+df_all = read.csv("S8A_vcf_231228.csv")
+sampleid = read.csv("S5C_sampleid.csv")
 sampleid[, 2][sampleid[, 2] == ""] <- NA
 sampleid[,2] = na.locf(sampleid[,2])
 

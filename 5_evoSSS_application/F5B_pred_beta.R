@@ -6,7 +6,7 @@ library(ggnewscale)
 library(tidyverse)
 library(dplyr)
 
-df = read.csv('../3_Epidemiological_analysis/F1D_Covid19CasesGISAID.csv')
+df = read.csv('../3_Epidemiological_analysis/F3B_Covid19CasesGISAID.csv')
 load('F5B_AB.rdata')
 
 VOC = c("B", "A")

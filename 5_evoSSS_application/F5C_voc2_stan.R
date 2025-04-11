@@ -402,21 +402,15 @@ p = ggplot() +
                      values = alpha(values, 0.7)) +
   scale_fill_manual(name="",
                     values = alpha(values, 0.3)) +
-  scale_y_continuous(trans='log10') +
   coord_cartesian(ylim = c(2,max(plot_data$Fitted))) +
-  labs(x = "Date", y = "Proportion") +
   theme_bw() +
   scale_x_date(breaks = seq(as.Date('2020-01-01'), as.Date('2022-11-01'), by="6 months"),
                minor_breaks = seq(as.Date('2019-12-01'), as.Date('2022-05-01'), by ='1 month'),
                date_labels = "%y-%b", expand = c(0, 0)) +
-  scale_y_continuous(trans='log10', 
-                     breaks = c(1,10,100,1000,10000),
-                     labels = c(expression(10^0),expression(10^1),
-                                expression(10^2), expression(10^3),
-                                expression(10^4))) +
-  xlab('') + ylab('Cases') + 
+  xlab('') + ylab(expression(Cases~(10^4))) + 
+  scale_y_continuous(breaks = 0:3*10^4, labels = 0:3) +
   coord_cartesian(xlim = c(as.Date('2021-01-01'), as.Date('2022-08-01')),
-                  ylim = c(1,4*10^4)) +
+                  ylim = c(1,3.3*10^4)) +
   theme(legend.position = 'none',
         legend.background = element_rect(color = NA, fill = NA),
         legend.key = element_blank(),
