@@ -1,5 +1,5 @@
 # evoSSS
-Codes and intermediary files for reproducing figures from “Multi-Scale Modeling of Competitive Transmission and Variant Risk Prediction of Infectious Pathogens”, by Sisi Huang, Xiangyun Lu, Zhengyun Xiao, Yiqi Zhuang, Xin Wei, Zuyan Fan, Lingtong Huang, Shijie Zhao, Michael Lynch, Hangping Yao\*, Min Zheng\*, and Chao Jiang\*. (*co-corresponding authors)
+Codes and intermediary files for reproducing figures from “Competitive Dynamics of Multi-Variant Infections Shape Variant Evolution and Transmission from Intra- to Inter-Host”, by Sisi Huang, Xiangyun Lu, Zhengyun Xiao, Yiqi Zhuang, Xin Wei, Zuyan Fan, Lingtong Huang, Shijie Zhao, Michael Lynch, Hangping Yao\*, Min Zheng\*, and Chao Jiang\*. (*co-corresponding authors)
 
 ## 1. Viral analysis of early COVID-19 patients
 
